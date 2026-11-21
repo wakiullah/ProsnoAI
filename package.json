@@ -1,0 +1,20 @@
+{
+  "name": "proshno-ai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev:server": "yarn workspace proshno-server dev",
+    "dev:client": "yarn workspace proshno-client dev",
+    "start:client": "yarn workspace proshno-client start",
+    "build:shared": "yarn workspace proshno-shared build",
+    "build:server": "yarn workspace proshno-server build",
+    "build:client": "yarn workspace proshno-client build",
+    "test:shared": "yarn workspace proshno-shared test"
+  },
+  "packageManager": "yarn@1.22.22"
+}

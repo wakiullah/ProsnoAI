@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+client/.next
+client/out
+server/dist
+shared/dist
+.git
+.gitignore
+*.log
+.env
+**/.env
+**/.env.*

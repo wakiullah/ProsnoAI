@@ -1,0 +1,287 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════════════════════════
+   AUTHENTIC ARABIC FONTS (Locally bundled in public/fonts/)
+   - Traditional Arabic / Amiri: Genuine Amiri Regular (400) & Bold (700) classical book typography
+   - Noto Naskh Arabic: Variable TTF (100-900) clean modern Naskh
+   - Lateef: Genuine Regular (400), SemiBold (600/700 for crisp normal bold headings), Bold (800)
+   ══════════════════════════════════════════════════════════════════════ */
+@font-face {
+  font-family: 'Traditional Arabic';
+  src: url('/fonts/Amiri-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Traditional Arabic';
+  src: url('/fonts/Amiri-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Traditional Arabic';
+  src: url('/fonts/Amiri-Bold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Naskh Arabic';
+  src: url('/fonts/NotoNaskhArabic.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef-SemiBold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef-Bold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Amiri genuine Regular + Bold */
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/Amiri-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/Amiri-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/Amiri-Bold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 248, 250, 252;
+  --background-end-rgb: 255, 255, 255;
+  --arabic-font-family: 'Traditional Arabic', 'Noto Naskh Arabic', 'Lateef', serif;
+}
+
+html {
+  /* Lock root rem unit to 16px so preview spacing matches Puppeteer PDF 1:1 regardless of browser font-size setting */
+  font-size: 16px;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #f8fafc;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Multi-Script Typography & Strict BiDi Isolation */
+.script-bn, .font-bn {
+  font-family: 'Noto Serif Bengali', 'Kalpurush', 'SolaimanLipi', serif;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.script-ar, .font-ar, [dir="rtl"],
+.proshno-a4-page [dir="rtl"] .font-serif {
+  font-family: var(--arabic-font-family, 'Traditional Arabic', 'Noto Naskh Arabic', 'Lateef', serif) !important;
+}
+
+.script-ar, .font-ar {
+  direction: rtl;
+  unicode-bidi: isolate;
+  font-size: 1.12em;
+  line-height: var(--paper-line-height, 1.5);
+  font-feature-settings: "kern" 1, "liga" 1;
+  font-synthesis: weight style;
+}
+
+/* Prevent nested .font-ar / .script-ar spans from compounding em font-size */
+.font-ar .script-ar,
+.font-ar .font-ar,
+.script-ar .script-ar,
+.script-ar .font-ar {
+  font-size: 1em;
+}
+
+/* Zoom-independent vector text shaping so preview (any zoom) and PDF wrap identically */
+.proshno-a4-page,
+.proshno-measure-staging {
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Clean natural bold for Arabic/Bengali question headings & numbers in canvas preview */
+.proshno-a4-page .q-number,
+.proshno-a4-page .q-stem,
+.proshno-a4-page .q-heading-bold,
+.proshno-a4-page .q-number .script-ar,
+.proshno-a4-page .q-stem .script-ar,
+.proshno-a4-page .q-heading-bold .script-ar,
+.proshno-a4-page .q-number .font-ar,
+.proshno-a4-page .q-stem .font-ar,
+.proshno-a4-page .q-heading-bold .font-ar {
+  font-weight: 700;
+  font-synthesis: weight style;
+}
+
+.script-ur, .font-ur {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  direction: rtl;
+  unicode-bidi: isolate;
+  font-size: 1.16em;
+  line-height: 2.1;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+.script-en, .font-en {
+  font-family: 'Times New Roman', 'Inter', serif;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.script-neutral {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   HIGH-FIDELITY PRINT STYLES (A4 Portrait, 1:1 Scale, Zero UI Bleed)
+   ══════════════════════════════════════════════════════════════════════ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Completely eliminate all UI chrome, navigation, toolbars, buttons, and popups */
+  nav,
+  aside,
+  footer,
+  button,
+  .print\:hidden,
+  .no-print,
+  [role="dialog"],
+  .fixed,
+  .sticky {
+    display: none !important;
+  }
+
+  /* Exam header inside A4 page must always remain visible */
+  .proshno-a4-page header,
+  .proshno-exam-header {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* Reset outer application wrappers */
+  main,
+  #__next,
+  body > div {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Reset zoom transform so print is strictly 1:1 true scale */
+  .zoom-container {
+    transform: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  /* Each discrete A4 page prints onto its own physical A4 sheet */
+  .proshno-a4-page {
+    page-break-after: always !important;
+    break-after: page !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 auto !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .proshno-a4-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+}
+
