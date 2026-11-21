@@ -2,6 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "yarn install --ignore-engines",
-  "buildCommand": "yarn build:shared && yarn workspace proshno-client build",
-  "outputDirectory": "client/.next"
+  "buildCommand": "yarn --cwd ../shared build && next build"
 }
