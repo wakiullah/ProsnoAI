@@ -23,7 +23,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Tell Puppeteer to use the pre-installed system Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
-    NODE_ENV=production \
     PORT=7860 \
     HOME=/home/node
 
@@ -35,8 +34,8 @@ COPY shared/package.json ./shared/
 COPY server/package.json ./server/
 COPY client/package.json ./client/
 
-# Install dependencies (using --ignore-engines to prevent strict Node engine version mismatch)
-RUN yarn install --ignore-engines --frozen-lockfile || yarn install --ignore-engines
+# Install ALL dependencies including devDependencies (typescript/tsc) needed for building
+RUN yarn install --production=false --ignore-engines --frozen-lockfile || yarn install --production=false --ignore-engines
 
 # Copy shared & server source code
 COPY shared ./shared
@@ -44,6 +43,9 @@ COPY server ./server
 
 # Build shared library and Express TypeScript server
 RUN yarn build:shared && yarn build:server
+
+# Set production environment for runtime after build completes
+ENV NODE_ENV=production
 
 # Hugging Face Spaces runs containers as user ID 1000 (node)
 RUN chown -R node:node /app
