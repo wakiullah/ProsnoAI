@@ -2,7 +2,7 @@
 # ProshnoAI Backend Dockerfile (Optimized for Hugging Face Spaces & Render)
 # Includes Node 20 + System Chromium + Full Bengali & Arabic Fonts for PDF
 # ─────────────────────────────────────────────────────────────────────────────
-FROM node:20-bookworm-slim
+FROM node:22-bookworm-slim
 
 # Install Chromium & comprehensive Bengali + Arabic + Latin fonts for Puppeteer PDF
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -35,8 +35,8 @@ COPY shared/package.json ./shared/
 COPY server/package.json ./server/
 COPY client/package.json ./client/
 
-# Install dependencies
-RUN yarn install --frozen-lockfile || yarn install
+# Install dependencies (using --ignore-engines to prevent strict Node engine version mismatch)
+RUN yarn install --ignore-engines --frozen-lockfile || yarn install --ignore-engines
 
 # Copy shared & server source code
 COPY shared ./shared
