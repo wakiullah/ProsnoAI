@@ -111,6 +111,9 @@ interface PaperCartState {
   setGeneratedSets: (sets: ExamSet[]) => void;
   setActiveSet: (setName: string) => void;
   isNavbarVisible: boolean;
+  hasCompletedSetup: boolean;
+  hasHydrated: boolean;
+  setHasHydrated: (val: boolean) => void;
   toggleNavbar: () => void;
   setNavbarVisible: (visible: boolean) => void;
 
@@ -119,18 +122,15 @@ interface PaperCartState {
 }
 
 const defaultHeaderConfig: InstitutionHeaderConfig = {
-  institutionName: 'ঢাকা আইডিয়াল মডেল স্কুল অ্যান্ড কলেজ',
-  institutionAddress: 'মতিঝিল, ঢাকা-১০০০',
-  examTitle: 'অর্ধ-বার্ষিক পরীক্ষা - ২০২৬',
-  subject: 'বাংলা ১ম পত্র',
-  subjectCode: '১০১',
-  grade: 'দশম শ্রেণি',
-  timeAllowed: '২ ঘণ্টা ৩০ মিনিট',
+  institutionName: '',
+  institutionAddress: '',
+  examTitle: '',
+  subject: '',
+  subjectCode: '',
+  grade: '',
+  timeAllowed: '৩ ঘণ্টা',
   totalMarks: 100,
-  generalInstructions: [
-    'সকল প্রশ্নের মান সমান।',
-    'ডান পাশের সংখ্যা প্রশ্নের পূর্ণমান নির্দেশক।',
-  ],
+  generalInstructions: [],
 };
 
 const defaultLayoutConfig: LayoutConfig = {
@@ -161,6 +161,9 @@ export const usePaperCartStore = create<PaperCartState>()(
       past: [],
       future: [],
       isNavbarVisible: true,
+      hasCompletedSetup: false,
+      hasHydrated: false,
+      setHasHydrated: (val) => set({ hasHydrated: val }),
       toggleNavbar: () => set((state) => ({ isNavbarVisible: !state.isNavbarVisible })),
       setNavbarVisible: (visible) => set({ isNavbarVisible: visible }),
 
@@ -524,6 +527,7 @@ export const usePaperCartStore = create<PaperCartState>()(
       loadFullPaper: (data) => {
         set((state) => ({
           ...withHistory(state),
+          hasCompletedSetup: true,
           headerConfig: data.headerConfig ? { ...state.headerConfig, ...data.headerConfig } : state.headerConfig,
           layoutConfig: data.layoutConfig ? { ...state.layoutConfig, ...data.layoutConfig } : state.layoutConfig,
           sections: data.sections !== undefined ? data.sections : state.sections,
@@ -841,7 +845,11 @@ export const usePaperCartStore = create<PaperCartState>()(
         layoutConfig: state.layoutConfig,
         sets: state.sets,
         activeSet: state.activeSet,
+        hasCompletedSetup: state.hasCompletedSetup,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

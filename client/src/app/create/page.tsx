@@ -102,6 +102,8 @@ export default function CreateQuestionPage() {
     loadFullPaper,
     getTotalMarks,
     getPaperData,
+    hasCompletedSetup,
+    hasHydrated,
   } = usePaperCartStore();
 
   // Wizard state
@@ -116,17 +118,20 @@ export default function CreateQuestionPage() {
     }
   }, [questions.length]);
 
-  // Auto-open wizard if paper is completely fresh/empty on initial visit
+  // Auto-open wizard on initial visit if user hasn't completed setup yet;
+  // if they already completed setup earlier, keep their saved class & subject from localStorage.
   useEffect(() => {
-    if (questions.length === 0 && !headerConfig.subject) {
+    if (!hasHydrated) return;
+    if (!hasCompletedSetup || !headerConfig.subject) {
       setIsWizardOpen(true);
     }
-  }, [questions.length, headerConfig.subject]);
+  }, [hasHydrated, hasCompletedSetup, headerConfig.subject]);
 
   // Ribbon & UI state
   const [activeTab, setActiveTab] = useState<RibbonTab>('home');
   const [zoom, setZoom] = useState(100);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
+  const [mobileInsertTrigger, setMobileInsertTrigger] = useState(0);
 
   // Auto-fit initial A4 canvas zoom on Mobile & Tablet (< 1024px)
   useEffect(() => {
@@ -441,11 +446,12 @@ export default function CreateQuestionPage() {
         questions: [],
       });
 
+      setActiveTab('insert');
       showToast('আরবি ২য় পত্র (কাওয়াইদুল লুগাতিল আরাবিয়্যাহ) এর হেডার প্রস্তুত হয়েছে! ইনসার্ট মেনু থেকে প্রশ্ন যোগ করুন।');
       return;
     }
 
-    // Handle Arabic 1st Paper (Dakhil 10th / 9th) Special Full Board Preset
+    // Handle Arabic 1st Paper (Dakhil 10th / 9th) Empty Paper with Arabic Header
     if (isArabic1st) {
       loadFullPaper({
         headerConfig: {
@@ -475,12 +481,14 @@ export default function CreateQuestionPage() {
           numberingFormat: 'ar',
           fontSize: 'standard',
           paperSize: 'A4',
+          arabicFont: 'Traditional Arabic',
         },
-        sections: dakhilArabic1stPaperSections,
-        questions: dakhilArabic1stPaperQuestions,
+        sections: [],
+        questions: [],
       });
 
-      showToast('দাখিল ১০ম শ্রেণির আরবি ১ম পত্রের ১০০ নম্বরের সম্পূর্ণ বোর্ড মডেল প্রশ্নপত্র সফলভাবে লোড হয়েছে!');
+      setActiveTab('insert');
+      showToast('আরবি ১ম পত্র (আল-লুগাতুল আরাবিয়্যাতুল ইত্তিসালিয়্যাহ) এর হেডার প্রস্তুত হয়েছে! ইনসার্ট মেনু থেকে প্রশ্ন যোগ করুন।');
       return;
     }
 
@@ -495,55 +503,33 @@ export default function CreateQuestionPage() {
 
     applyHeaderPreset(preset);
 
-    updateHeaderConfig({
-      institutionName: config.institutionName,
-      examTitle: config.examTitle,
-      subject: config.subject,
-      subjectCode: config.subjectCode,
-      grade: config.grade,
-      timeAllowed: config.timeAllowed,
-      totalMarks: config.totalMarks,
-      educationStream: config.stream,
-      bismillahText: config.bismillahText,
-      generalInstructions: [
-        'সকল প্রশ্নের মান সমান।',
-        'ডান পাশের সংখ্যা প্রশ্নের পূর্ণমান নির্দেশক।',
-      ],
+    loadFullPaper({
+      headerConfig: {
+        institutionName: config.institutionName,
+        examTitle: config.examTitle,
+        subject: config.subject,
+        subjectCode: config.subjectCode,
+        grade: config.grade,
+        timeAllowed: config.timeAllowed,
+        totalMarks: config.totalMarks,
+        educationStream: config.stream,
+        bismillahText: config.bismillahText,
+        generalInstructions: [
+          'সকল প্রশ্নের মান সমান।',
+          'ডান পাশের সংখ্যা প্রশ্নের পূর্ণমান নির্দেশক।',
+        ],
+      },
+      layoutConfig: {
+        columns: 2,
+        numberingFormat: 'bn',
+        fontSize: 'standard',
+      },
+      sections: [],
+      questions: [],
     });
 
-    // Default layout setup
-    updateLayoutConfig({
-      columns: 2,
-      numberingFormat: config.stream === 'ALIA' || config.stream === 'QAWMI' ? 'bn' : 'bn',
-      fontSize: 'standard',
-    });
-
-    // Auto-create initial default sections if none exist
-    if (sections.length === 0) {
-      if (config.stream === 'ALIA') {
-        addSection({
-          name: 'ক-বিভাগ : বহুনির্বাচনী প্রশ্ন',
-          instructions: 'নিচের সকল প্রশ্নের সঠিক উত্তর দাও:',
-          requiredCount: 20,
-          marksPerQuestion: 1,
-        });
-        addSection({
-          name: 'খ-বিভাগ : সংক্ষিপ্ত ও রচনামূলক প্রশ্ন',
-          instructions: 'যেকোনো ৪টি প্রশ্নের উত্তর দাও:',
-          requiredCount: 4,
-          marksPerQuestion: 10,
-        });
-      } else {
-        addSection({
-          name: 'ক-বিভাগ : বহুনির্বাচনী প্রশ্ন',
-          instructions: 'সকল বহুনির্বাচনী প্রশ্নের উত্তর দাও:',
-          requiredCount: 30,
-          marksPerQuestion: 1,
-        });
-      }
-    }
-
-    showToast(`সফলভাবে ${config.subject} (${config.grade}) এর বোর্ড কাঠামো সেট করা হয়েছে!`);
+    setActiveTab('insert');
+    showToast(`${config.subject} এর হেডার প্রস্তুত হয়েছে! ইনসার্ট মেনু থেকে প্রশ্ন যোগ করুন।`);
   };
 
   // 1-Click Load PDF Board Exam Preset
@@ -1490,7 +1476,10 @@ export default function CreateQuestionPage() {
               handleOpenNasrulModal(q);
             }
           }}
-          onInsertQuestionPrompt={() => setActiveTab('insert')}
+          onInsertQuestionPrompt={() => {
+            setActiveTab('insert');
+            setMobileInsertTrigger((n) => n + 1);
+          }}
           onOpenAiDrawer={() => setIsAiDrawerOpen(true)}
           zoom={zoom}
           onZoomChange={setZoom}
@@ -1578,6 +1567,7 @@ export default function CreateQuestionPage() {
           ikhtibarCount={ikhtibarGroups.length}
           onOpenTarjamaInshaModal={() => handleOpenTarjamaInshaModal()}
           tarjamaInshaCount={tarjamaInshaGroups.length}
+          openInsertTrigger={mobileInsertTrigger}
         />
       )}
 

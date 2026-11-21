@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { EducationStream, HeaderPreset, InstitutionHeaderConfig } from 'proshno-shared';
 import {
   GraduationCap,
@@ -128,6 +128,13 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
   const [timeAllowed, setTimeAllowed] = useState('ثلاث ساعات');
   const [totalMarks, setTotalMarks] = useState<number>(100);
   const [bismillahText, setBismillahText] = useState('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ');
+
+  // Always start at Step 1 (Education Stream selection) whenever wizard opens
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

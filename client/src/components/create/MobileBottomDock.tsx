@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   PlusCircle,
   Sliders,
@@ -71,6 +71,7 @@ interface MobileBottomDockProps {
   ikhtibarCount?: number;
   onOpenTarjamaInshaModal?: () => void;
   tarjamaInshaCount?: number;
+  openInsertTrigger?: number;
 }
 
 export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
@@ -109,9 +110,16 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
   ikhtibarCount = 0,
   onOpenTarjamaInshaModal,
   tarjamaInshaCount = 0,
+  openInsertTrigger = 0,
 }) => {
   const [activeSheet, setActiveSheet] = useState<MobileSheetTab>(null);
   const isKeyboardOpen = useMobileKeyboardOpen();
+
+  useEffect(() => {
+    if (openInsertTrigger > 0) {
+      setActiveSheet('insert');
+    }
+  }, [openInsertTrigger]);
 
   const isArabic2nd =
     (headerConfig.subject || '').includes('আরবি ২য়') ||

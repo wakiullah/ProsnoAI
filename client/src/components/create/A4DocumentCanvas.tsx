@@ -92,6 +92,7 @@ interface PaginatedPage {
 // Wrapper for DnD Sortable Question Item
 function SortableQuestionRow({
   question,
+  questionIndex,
   globalIndex,
   numberingFormat,
   sections,
@@ -105,6 +106,7 @@ function SortableQuestionRow({
   onSelect,
 }: {
   question: QuestionData;
+  questionIndex: number;
   globalIndex: number;
   numberingFormat: NumberingFormat;
   sections: ExamSection[];
@@ -130,7 +132,7 @@ function SortableQuestionRow({
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} data-canvas-q-idx={questionIndex} style={style}>
       <EditableQuestionItem
         question={question}
         globalIndex={globalIndex}
@@ -179,6 +181,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
   onSelectQuestion,
 }) => {
   const canvasWrapperRef = useRef<HTMLDivElement>(null);
+  const stageSizerRef = useRef<HTMLDivElement>(null);
   const zoomContainerRef = useRef<HTMLDivElement>(null);
   const [unscaledHeight, setUnscaledHeight] = useState(0);
   const [fitZoom, setFitZoom] = useState(100);
@@ -186,6 +189,15 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
   const isKeyboardOpen = useMobileKeyboardOpen();
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+  const prevZoomRef = useRef(zoom);
+  const focalPointRef = useRef<{ clientX: number; clientY: number } | null>(null);
+  const pendingQuestionFocusRef = useRef<{
+    unscaledX: number;
+    unscaledY: number;
+    unscaledW: number;
+    unscaledH: number;
+  } | null>(null);
+  const autoZoomedFromFitRef = useRef(false);
   const numberingFormat: NumberingFormat = layoutConfig.numberingFormat || 'bn';
   const isTwoCol = layoutConfig.columns === 2;
   const isArabicPaper =
@@ -306,6 +318,10 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
         const ratio = currentDist / initialDist;
         const nextZoom = Math.max(30, Math.min(160, Math.round(initialZoom * ratio)));
         if (nextZoom !== zoomRef.current) {
+          focalPointRef.current = {
+            clientX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+            clientY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+          };
           onZoomChange(nextZoom);
         }
       }
@@ -693,6 +709,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
         <SortableQuestionRow
           key={item.id}
           question={q}
+          questionIndex={qIdx}
           globalIndex={item.globalIndex}
           numberingFormat={numberingFormat}
           sections={sections}
@@ -705,7 +722,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
           isSelected={selectedQuestionIndex === qIdx}
           onSelect={
             onSelectQuestion
-              ? () => onSelectQuestion(selectedQuestionIndex === qIdx ? null : qIdx)
+              ? () => onSelectQuestion(qIdx)
               : undefined
           }
         />
@@ -714,13 +731,137 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
 
   const isScaledFit = zoom <= fitZoom + 2;
   const isArabicBold = layoutConfig.arabicFontWeight === 'bold';
+  const scale = zoom / 100;
+  const unscaledWidthPx = Math.ceil(pageWidthMm * MM_TO_PX);
+  const scaledWidthPx = Math.ceil(unscaledWidthPx * scale);
+  const scaledHeightPx = unscaledHeight > 0 ? Math.ceil(unscaledHeight * scale) : undefined;
+
+  // Canva-style Smart Auto-Zoom to a specific question on Mobile/Tablet when selected for editing
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 1024 || !onZoomChange) return;
+
+    if (selectedQuestionIndex === null) {
+      if (autoZoomedFromFitRef.current) {
+        autoZoomedFromFitRef.current = false;
+        onZoomChange(fitZoom);
+      }
+      return;
+    }
+
+    const zcEl = zoomContainerRef.current;
+    const wrapper = canvasWrapperRef.current;
+    if (!zcEl || !wrapper) return;
+
+    const qEl = zcEl.querySelector(
+      `[data-canvas-q-idx="${selectedQuestionIndex}"]`
+    ) as HTMLElement | null;
+    if (!qEl) return;
+
+    const curScale = zoomRef.current / 100;
+    const qRect = qEl.getBoundingClientRect();
+    const zcRect = zcEl.getBoundingClientRect();
+
+    const unscaledX = (qRect.left - zcRect.left) / curScale;
+    const unscaledY = (qRect.top - zcRect.top) / curScale;
+    const unscaledW = Math.max(140, qRect.width / curScale);
+    const unscaledH = Math.max(28, qRect.height / curScale);
+
+    const vw = wrapper.clientWidth || window.innerWidth;
+    const idealZoom = Math.floor(((vw - 24) / unscaledW) * 100);
+    const targetZoom = Math.max(fitZoom + 15, Math.min(110, idealZoom));
+
+    if (zoomRef.current < targetZoom - 3) {
+      if (zoomRef.current <= fitZoom + 5) {
+        autoZoomedFromFitRef.current = true;
+      }
+      pendingQuestionFocusRef.current = {
+        unscaledX,
+        unscaledY,
+        unscaledW,
+        unscaledH,
+      };
+      onZoomChange(targetZoom);
+    } else {
+      // Already zoomed in enough — just pan horizontally to center this question's column
+      const qCenterX = (unscaledX + unscaledW / 2) * curScale;
+      wrapper.scrollTo({
+        left: Math.max(0, Math.round(qCenterX - vw / 2)),
+        behavior: 'smooth',
+      });
+    }
+  }, [selectedQuestionIndex, fitZoom, onZoomChange]);
+
+  // Preserve vertical page scroll & horizontal focal position when zooming in/out
+  useIsomorphicLayoutEffect(() => {
+    const prevZoom = prevZoomRef.current;
+    if (prevZoom === zoom) return;
+    prevZoomRef.current = zoom;
+
+    const wrapper = canvasWrapperRef.current;
+    const sizer = stageSizerRef.current;
+    if (!wrapper || !sizer || typeof window === 'undefined') return;
+
+    // If zooming directly onto a selected question (Canva Smart Auto-Zoom)
+    if (pendingQuestionFocusRef.current) {
+      const target = pendingQuestionFocusRef.current;
+      pendingQuestionFocusRef.current = null;
+      const newScale = zoom / 100;
+
+      // 1. Center horizontally on the target question column
+      const qCenterX = (target.unscaledX + target.unscaledW / 2) * newScale;
+      wrapper.scrollLeft = Math.max(0, Math.round(qCenterX - wrapper.clientWidth / 2));
+
+      // 2. Position vertically so the target question is comfortably centered above keyboard area
+      const sizerRect = sizer.getBoundingClientRect();
+      const qFocusYInStage = (target.unscaledY + Math.min(target.unscaledH / 2, 100)) * newScale;
+      const currentViewportY = sizerRect.top + qFocusYInStage;
+      const desiredViewportY = Math.round(window.innerHeight * 0.34);
+      const deltaY = Math.round(currentViewportY - desiredViewportY);
+
+      const mainScroller = wrapper.parentElement;
+      const beforeWinY = window.scrollY;
+      window.scrollBy(0, deltaY);
+      if (window.scrollY === beforeWinY && mainScroller) {
+        mainScroller.scrollTop += deltaY;
+      }
+      return;
+    }
+
+    const ratio = zoom / prevZoom;
+    const focalY = focalPointRef.current?.clientY ?? window.innerHeight / 2;
+    const focalX = focalPointRef.current?.clientX ?? window.innerWidth / 2;
+    focalPointRef.current = null;
+
+    // 1. Vertical scroll anchor: keep the current page/line fixed at focalY
+    const sizerRect = sizer.getBoundingClientRect();
+    const oldOffsetY = focalY - sizerRect.top;
+    if (oldOffsetY > 0) {
+      const deltaY = Math.round(oldOffsetY * (ratio - 1));
+      const mainScroller = wrapper.parentElement;
+      const beforeWinY = window.scrollY;
+      window.scrollBy(0, deltaY);
+      if (window.scrollY === beforeWinY && mainScroller) {
+        mainScroller.scrollTop += deltaY;
+      }
+    }
+
+    // 2. Horizontal scroll anchor: center or preserve focalX so left/right panning works smoothly
+    const oldScaledW = unscaledWidthPx * (prevZoom / 100);
+    const oldLeftMargin = Math.max(0, (wrapper.clientWidth - oldScaledW) / 2);
+    const oldOffsetInPageX =
+      prevZoom <= fitZoom + 2
+        ? Math.max(0, Math.min(oldScaledW, focalX - oldLeftMargin))
+        : wrapper.scrollLeft + focalX;
+    const newOffsetInPageX = oldOffsetInPageX * ratio;
+    wrapper.scrollLeft = Math.max(0, Math.round(newOffsetInPageX - focalX));
+  }, [zoom, fitZoom, unscaledWidthPx]);
 
   return (
     <div
       ref={canvasWrapperRef}
       onClick={() => onSelectQuestion?.(null)}
       style={{ touchAction: 'pan-x pan-y' }}
-      className={`w-full flex flex-col items-center py-4 sm:py-8 px-1 sm:px-6 pb-28 lg:pb-12 bg-slate-200/90 min-h-screen select-none print:bg-white print:p-0 print:m-0 ${
+      className={`w-full block py-4 sm:py-8 px-1 sm:px-6 pb-28 lg:pb-12 bg-slate-200/90 min-h-screen select-none print:bg-white print:p-0 print:m-0 ${
         isScaledFit ? 'overflow-x-hidden' : 'overflow-x-auto'
       } ${isArabicBold ? 'proshno-arabic-bold' : ''}`}
     >
@@ -852,7 +993,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
       </div>
 
       {/* Zoom & Page Size Indicator Pill */}
-      <div className="mb-3 sm:mb-4 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold text-slate-600 bg-white/85 backdrop-blur px-3 py-1 rounded-full border border-slate-300 shadow-2xs print:hidden max-w-[95vw]">
+      <div className="mx-auto w-fit mb-3 sm:mb-4 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold text-slate-600 bg-white/85 backdrop-blur px-3 py-1 rounded-full border border-slate-300 shadow-2xs print:hidden max-w-[95vw]">
         <span className="hidden xs:inline sm:inline">
           {isLegal ? 'Legal (216×356mm)' : 'A4 (210×297mm)'}
         </span>
@@ -884,6 +1025,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
             if (document.activeElement instanceof HTMLElement) {
               document.activeElement.blur();
             }
+            onSelectQuestion?.(null);
           }}
           className="lg:hidden fixed top-15 right-3 z-40 flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-extrabold shadow-lg border border-emerald-500 active:scale-95 transition print:hidden"
         >
@@ -930,20 +1072,26 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
         </div>
       )}
 
-      {/* Zoom transform container */}
+      {/* True Layout Sizer + Zoom transform container (enables full Left/Right & Top/Bottom panning) */}
       <div
-        ref={zoomContainerRef}
+        ref={stageSizerRef}
         style={{
-          transform: `scale(${zoom / 100})`,
-          transformOrigin: 'top center',
-          transition: 'transform 0.15s ease-out',
-          marginBottom:
-            zoom < 100 && unscaledHeight > 0
-              ? `-${Math.round(unscaledHeight * (1 - zoom / 100))}px`
-              : undefined,
+          width: `${scaledWidthPx}px`,
+          height: scaledHeightPx ? `${scaledHeightPx}px` : undefined,
+          margin: '0 auto',
+          position: 'relative',
         }}
-        className="shrink-0 flex flex-col items-center zoom-container"
+        className="print:w-auto! print:h-auto! print:m-0!"
       >
+        <div
+          ref={zoomContainerRef}
+          style={{
+            width: `${unscaledWidthPx}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+          }}
+          className="shrink-0 flex flex-col items-center zoom-container"
+        >
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -1096,6 +1244,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
             })}
           </SortableContext>
         </DndContext>
+        </div>
       </div>
     </div>
   );
