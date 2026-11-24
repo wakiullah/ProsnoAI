@@ -151,7 +151,7 @@ export const PaperSettingsModal: React.FC<PaperSettingsModalProps> = ({
       grade: grade.trim() || undefined,
       timeAllowed: timeAllowed.trim() || '২ ঘণ্টা ৩০ মিনিট',
       totalMarks: Number(totalMarks) || 100,
-      bismillahText: activePreset === 'QAWMI' ? bismillah.trim() : undefined,
+      bismillahText: undefined,
       jamat: activePreset === 'QAWMI' ? jamat.trim() : undefined,
       kitab: activePreset === 'QAWMI' ? kitab.trim() : undefined,
       questionsToAnswer:
@@ -394,16 +394,6 @@ export const PaperSettingsModal: React.FC<PaperSettingsModalProps> = ({
                         placeholder="মিশকাত জামাত"
                       />
                     </div>
-                  </div>
-                  <div>
-                    <label className="font-semibold text-slate-700 block mb-1">বিসমিল্লাহ টেক্সট:</label>
-                    <input
-                      type="text"
-                      dir="rtl"
-                      value={bismillah}
-                      onChange={(e) => setBismillah(e.target.value)}
-                      className="w-full p-2 border border-amber-200 rounded-lg bg-white font-arabic text-sm"
-                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>

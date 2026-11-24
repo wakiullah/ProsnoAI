@@ -50,6 +50,36 @@ import {
   TarjamaInshaModal,
   extractTarjamaInshaGroups,
 } from '../../components/create/arabic2nd/TarjamaInshaModal';
+import {
+  BanglaMcqBuilderModal,
+  extractBanglaMcqGroups,
+} from '../../components/create/bangla1st/BanglaMcqBuilderModal';
+import {
+  BanglaCqBuilderModal,
+  extractBanglaCqGroups,
+} from '../../components/create/bangla1st/BanglaCqBuilderModal';
+import {
+  BanglaPaperMode,
+  getBanglaInstructionsByMode,
+  isBangla1stPaper,
+} from '../../components/create/bangla1st/bangla1stDefaults';
+import {
+  getBangla2ndInstructions,
+  isBangla2ndPaper,
+  isHscOrAlimGrade,
+} from '../../components/create/bangla2nd/bangla2ndDefaults';
+import {
+  Bangla2ndSscWrittenModal,
+  extractBangla2ndSscWrittenGroups,
+} from '../../components/create/bangla2nd/Bangla2ndSscWrittenModal';
+import {
+  Bangla2ndHscGrammarModal,
+  extractBangla2ndHscGrammarGroups,
+} from '../../components/create/bangla2nd/Bangla2ndHscGrammarModal';
+import {
+  Bangla2ndHscNirmitiModal,
+  extractBangla2ndHscNirmitiGroups,
+} from '../../components/create/bangla2nd/Bangla2ndHscNirmitiModal';
 import { SetShufflerModal } from '../../components/builder/SetShufflerModal';
 import { DownloadModal, DeliverableType } from '../../components/builder/DownloadModal';
 import { PaperSettingsModal } from '../../components/builder/PaperSettingsModal';
@@ -165,6 +195,16 @@ export default function CreateQuestionPage() {
   const [activeIkhtibarGroupId, setActiveIkhtibarGroupId] = useState<string | null>(null);
   const [isTarjamaInshaModalOpen, setIsTarjamaInshaModalOpen] = useState(false);
   const [activeTarjamaInshaGroupId, setActiveTarjamaInshaGroupId] = useState<string | null>(null);
+  const [isBanglaMcqModalOpen, setIsBanglaMcqModalOpen] = useState(false);
+  const [activeBanglaMcqGroupId, setActiveBanglaMcqGroupId] = useState<string | null>(null);
+  const [isBanglaCqModalOpen, setIsBanglaCqModalOpen] = useState(false);
+  const [activeBanglaCqGroupId, setActiveBanglaCqGroupId] = useState<string | null>(null);
+  const [isBangla2ndSscWrittenModalOpen, setIsBangla2ndSscWrittenModalOpen] = useState(false);
+  const [activeBangla2ndSscWrittenGroupId, setActiveBangla2ndSscWrittenGroupId] = useState<string | null>(null);
+  const [isBangla2ndHscGrammarModalOpen, setIsBangla2ndHscGrammarModalOpen] = useState(false);
+  const [activeBangla2ndHscGrammarGroupId, setActiveBangla2ndHscGrammarGroupId] = useState<string | null>(null);
+  const [isBangla2ndHscNirmitiModalOpen, setIsBangla2ndHscNirmitiModalOpen] = useState(false);
+  const [activeBangla2ndHscNirmitiGroupId, setActiveBangla2ndHscNirmitiGroupId] = useState<string | null>(null);
   const [isPaperSettingsModalOpen, setIsPaperSettingsModalOpen] = useState(false);
   const autoFitFnRef = useRef<((targetPages?: number) => void) | null>(null);
 
@@ -177,6 +217,11 @@ export default function CreateQuestionPage() {
   const sarfNahwGroups = useMemo(() => extractSarfNahwGroups(questions), [questions]);
   const ikhtibarGroups = useMemo(() => extractIkhtibarQawaidGroups(questions), [questions]);
   const tarjamaInshaGroups = useMemo(() => extractTarjamaInshaGroups(questions), [questions]);
+  const banglaMcqGroups = useMemo(() => extractBanglaMcqGroups(questions), [questions]);
+  const banglaCqGroups = useMemo(() => extractBanglaCqGroups(questions), [questions]);
+  const bangla2ndSscWrittenGroups = useMemo(() => extractBangla2ndSscWrittenGroups(questions), [questions]);
+  const bangla2ndHscGrammarGroups = useMemo(() => extractBangla2ndHscGrammarGroups(questions), [questions]);
+  const bangla2ndHscNirmitiGroups = useMemo(() => extractBangla2ndHscNirmitiGroups(questions), [questions]);
 
   const handleOpenNasrulModal = useCallback(
     (specificQuestion?: QuestionData) => {
@@ -292,6 +337,93 @@ export default function CreateQuestionPage() {
     [tarjamaInshaGroups]
   );
 
+  const handleOpenBanglaMcqModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = banglaMcqGroups.find((g) => g.groupId === specificQuestion.groupId);
+        setActiveBanglaMcqGroupId(
+          matched ? matched.groupId : banglaMcqGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveBanglaMcqGroupId(banglaMcqGroups[0]?.groupId ?? null);
+      }
+      setIsBanglaMcqModalOpen(true);
+    },
+    [banglaMcqGroups]
+  );
+
+  const handleOpenBanglaCqModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = banglaCqGroups.find((g) => g.groupId === specificQuestion.groupId);
+        setActiveBanglaCqGroupId(
+          matched ? matched.groupId : banglaCqGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveBanglaCqGroupId(banglaCqGroups[0]?.groupId ?? null);
+      }
+      setIsBanglaCqModalOpen(true);
+    },
+    [banglaCqGroups]
+  );
+
+  const handleOpenBangla2ndSscWrittenModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = bangla2ndSscWrittenGroups.find(
+          (g) => g.groupId === specificQuestion.groupId
+        );
+        setActiveBangla2ndSscWrittenGroupId(
+          matched ? matched.groupId : bangla2ndSscWrittenGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveBangla2ndSscWrittenGroupId(
+          bangla2ndSscWrittenGroups[0]?.groupId ?? null
+        );
+      }
+      setIsBangla2ndSscWrittenModalOpen(true);
+    },
+    [bangla2ndSscWrittenGroups]
+  );
+
+  const handleOpenBangla2ndHscGrammarModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = bangla2ndHscGrammarGroups.find(
+          (g) => g.groupId === specificQuestion.groupId
+        );
+        setActiveBangla2ndHscGrammarGroupId(
+          matched ? matched.groupId : bangla2ndHscGrammarGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveBangla2ndHscGrammarGroupId(
+          bangla2ndHscGrammarGroups[0]?.groupId ?? null
+        );
+      }
+      setIsBangla2ndHscGrammarModalOpen(true);
+    },
+    [bangla2ndHscGrammarGroups]
+  );
+
+  const handleOpenBangla2ndHscNirmitiModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = bangla2ndHscNirmitiGroups.find(
+          (g) => g.groupId === specificQuestion.groupId
+        );
+        setActiveBangla2ndHscNirmitiGroupId(
+          matched ? matched.groupId : bangla2ndHscNirmitiGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveBangla2ndHscNirmitiGroupId(
+          bangla2ndHscNirmitiGroups[0]?.groupId ?? null
+        );
+      }
+      setIsBangla2ndHscNirmitiModalOpen(true);
+    },
+    [bangla2ndHscNirmitiGroups]
+  );
+
   // Status message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -389,6 +521,8 @@ export default function CreateQuestionPage() {
     timeAllowed: string;
     totalMarks: number;
     bismillahText?: string;
+    banglaPaperMode?: BanglaPaperMode;
+    setCode?: string;
   }) => {
     const isArabic2nd =
       config.subject.includes('আরবি ২য়') ||
@@ -430,7 +564,7 @@ export default function CreateQuestionPage() {
               : config.timeAllowed,
           totalMarks: 100,
           headerSize: 'compact',
-          bismillahText: config.bismillahText || 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+          bismillahText: undefined,
           educationStream: 'ALIA',
           headerPreset: 'ALIA',
           generalInstructions: ['الملاحظة: إجابة كل سؤال لازمة باللغة العربية'],
@@ -471,7 +605,7 @@ export default function CreateQuestionPage() {
             : config.timeAllowed,
           totalMarks: 100,
           headerSize: 'compact',
-          bismillahText: config.bismillahText || 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+          bismillahText: undefined,
           educationStream: 'ALIA',
           headerPreset: 'ALIA',
           generalInstructions: ['الملاحظة: إجابة كل سؤال لازمة باللغة العربية'],
@@ -503,24 +637,47 @@ export default function CreateQuestionPage() {
 
     applyHeaderPreset(preset);
 
+    const isBangla2nd = isBangla2ndPaper(config.subject, config.subjectCode);
+    const isBangla1st = !isBangla2nd && isBangla1stPaper(config.subject, config.subjectCode);
+    const banglaModeInfo = isBangla1st
+      ? getBanglaInstructionsByMode(config.banglaPaperMode || 'COMBINED_100', config.grade)
+      : isBangla2nd
+      ? getBangla2ndInstructions(config.banglaPaperMode || 'COMBINED_100', config.grade)
+      : null;
+
+    const isHscAlimB2 = isBangla2nd && isHscOrAlimGrade(config.grade);
+
     loadFullPaper({
       headerConfig: {
         institutionName: config.institutionName,
         examTitle: config.examTitle,
         subject: config.subject,
-        subjectCode: config.subjectCode,
+        subjectCode:
+          config.subjectCode ||
+          (isBangla1st
+            ? config.stream === 'ALIA'
+              ? '১৩৫'
+              : '১০১'
+            : isBangla2nd
+            ? config.stream === 'ALIA'
+              ? '১৩৬'
+              : '১০২'
+            : undefined),
         grade: config.grade,
-        timeAllowed: config.timeAllowed,
-        totalMarks: config.totalMarks,
+        timeAllowed: config.timeAllowed || banglaModeInfo?.timeAllowed || '৩ ঘণ্টা',
+        totalMarks: config.totalMarks || banglaModeInfo?.totalMarks || 100,
         educationStream: config.stream,
-        bismillahText: config.bismillahText,
-        generalInstructions: [
-          'সকল প্রশ্নের মান সমান।',
-          'ডান পাশের সংখ্যা প্রশ্নের পূর্ণমান নির্দেশক।',
-        ],
+        bismillahText: undefined,
+        headerSize: isBangla1st || isBangla2nd ? 'compact' : 'standard',
+        generalInstructions: banglaModeInfo
+          ? banglaModeInfo.generalInstructions
+          : [
+              'সকল প্রশ্নের মান সমান।',
+              'ডান পাশের সংখ্যা প্রশ্নের পূর্ণমান নির্দেশক।',
+            ],
       },
       layoutConfig: {
-        columns: 2,
+        columns: isHscAlimB2 ? 1 : 2,
         numberingFormat: 'bn',
         fontSize: 'standard',
       },
@@ -1349,7 +1506,8 @@ export default function CreateQuestionPage() {
     }
   };
 
-  const availableSetNames = sets.length > 0 ? sets.map((s) => s.setName) : ['Set A'];
+  const availableSetNames = sets.length > 0 ? sets.map((s) => s.setName) : [];
+  const effectiveActiveSet = sets.length > 0 ? activeSet : '';
 
   return (
     <div className="min-h-screen bg-slate-100/90 flex flex-col">
@@ -1405,7 +1563,7 @@ export default function CreateQuestionPage() {
         questionCount={questions.length}
         zoom={zoom}
         onZoomChange={setZoom}
-        activeSetName={activeSet || 'Set A'}
+        activeSetName={effectiveActiveSet}
         availableSets={availableSetNames}
         onSelectSet={setActiveSet}
         onLoadArabicPdfPreset={handleLoadArabicPdfPreset}
@@ -1425,6 +1583,16 @@ export default function CreateQuestionPage() {
         ikhtibarCount={ikhtibarGroups.length}
         onOpenTarjamaInshaModal={() => handleOpenTarjamaInshaModal()}
         tarjamaInshaCount={tarjamaInshaGroups.length}
+        onOpenBanglaMcqModal={() => handleOpenBanglaMcqModal()}
+        banglaMcqCount={banglaMcqGroups.length}
+        onOpenBanglaCqModal={() => handleOpenBanglaCqModal()}
+        banglaCqCount={banglaCqGroups.length}
+        onOpenBangla2ndSscWrittenModal={() => handleOpenBangla2ndSscWrittenModal()}
+        bangla2ndSscWrittenCount={bangla2ndSscWrittenGroups.length}
+        onOpenBangla2ndHscGrammarModal={() => handleOpenBangla2ndHscGrammarModal()}
+        bangla2ndHscGrammarCount={bangla2ndHscGrammarGroups.length}
+        onOpenBangla2ndHscNirmitiModal={() => handleOpenBangla2ndHscNirmitiModal()}
+        bangla2ndHscNirmitiCount={bangla2ndHscNirmitiGroups.length}
         onOpenSettingsModal={() => setIsPaperSettingsModalOpen(true)}
         onAutoRenumber={handleAutoRenumber}
         onStripAllHarakat={handleStripAllHarakat}
@@ -1443,7 +1611,7 @@ export default function CreateQuestionPage() {
           headerConfig={headerConfig}
           sections={sections}
           questions={questions}
-          activeSetName={activeSet || 'Set A'}
+          activeSetName={effectiveActiveSet}
           onUpdateHeader={updateHeaderConfig}
           onUpdateLayout={updateLayoutConfig}
           onRegisterAutoFit={(fn) => {
@@ -1472,6 +1640,16 @@ export default function CreateQuestionPage() {
               handleOpenIkhtibarModal(q);
             } else if (q.groupId && q.groupId.startsWith('tarjama-insha-section')) {
               handleOpenTarjamaInshaModal(q);
+            } else if (q.groupId && q.groupId.startsWith('bangla-mcq-section')) {
+              handleOpenBanglaMcqModal(q);
+            } else if (q.groupId && q.groupId.startsWith('bangla-cq-section')) {
+              handleOpenBanglaCqModal(q);
+            } else if (q.groupId && q.groupId.startsWith('bangla2nd-ssc-written')) {
+              handleOpenBangla2ndSscWrittenModal(q);
+            } else if (q.groupId && q.groupId.startsWith('bangla2nd-hsc-grammar')) {
+              handleOpenBangla2ndHscGrammarModal(q);
+            } else if (q.groupId && q.groupId.startsWith('bangla2nd-hsc-nirmiti')) {
+              handleOpenBangla2ndHscNirmitiModal(q);
             } else {
               handleOpenNasrulModal(q);
             }
@@ -1525,6 +1703,11 @@ export default function CreateQuestionPage() {
                   else if (q.groupId?.startsWith('sarf-nahw-section')) handleOpenSarfNahwModal(q);
                   else if (q.groupId?.startsWith('ikhtibar-qawaid-section')) handleOpenIkhtibarModal(q);
                   else if (q.groupId?.startsWith('tarjama-insha-section')) handleOpenTarjamaInshaModal(q);
+                  else if (q.groupId?.startsWith('bangla-mcq-section')) handleOpenBanglaMcqModal(q);
+                  else if (q.groupId?.startsWith('bangla-cq-section')) handleOpenBanglaCqModal(q);
+                  else if (q.groupId?.startsWith('bangla2nd-ssc-written')) handleOpenBangla2ndSscWrittenModal(q);
+                  else if (q.groupId?.startsWith('bangla2nd-hsc-grammar')) handleOpenBangla2ndHscGrammarModal(q);
+                  else if (q.groupId?.startsWith('bangla2nd-hsc-nirmiti')) handleOpenBangla2ndHscNirmitiModal(q);
                   else handleOpenNasrulModal(q);
                 }
               : undefined
@@ -1547,7 +1730,7 @@ export default function CreateQuestionPage() {
           onAutoRenumber={handleAutoRenumber}
           onStripAllHarakat={handleStripAllHarakat}
           onAutoFitPage={() => autoFitFnRef.current?.()}
-          activeSetName={activeSet || 'Set A'}
+          activeSetName={effectiveActiveSet}
           availableSets={availableSetNames}
           onSelectSet={setActiveSet}
           onLoadArabicPdfPreset={handleLoadArabicPdfPreset}
@@ -1567,6 +1750,16 @@ export default function CreateQuestionPage() {
           ikhtibarCount={ikhtibarGroups.length}
           onOpenTarjamaInshaModal={() => handleOpenTarjamaInshaModal()}
           tarjamaInshaCount={tarjamaInshaGroups.length}
+          onOpenBanglaMcqModal={() => handleOpenBanglaMcqModal()}
+          banglaMcqCount={banglaMcqGroups.length}
+          onOpenBanglaCqModal={() => handleOpenBanglaCqModal()}
+          banglaCqCount={banglaCqGroups.length}
+          onOpenBangla2ndSscWrittenModal={() => handleOpenBangla2ndSscWrittenModal()}
+          bangla2ndSscWrittenCount={bangla2ndSscWrittenGroups.length}
+          onOpenBangla2ndHscGrammarModal={() => handleOpenBangla2ndHscGrammarModal()}
+          bangla2ndHscGrammarCount={bangla2ndHscGrammarGroups.length}
+          onOpenBangla2ndHscNirmitiModal={() => handleOpenBangla2ndHscNirmitiModal()}
+          bangla2ndHscNirmitiCount={bangla2ndHscNirmitiGroups.length}
           openInsertTrigger={mobileInsertTrigger}
         />
       )}
@@ -1781,6 +1974,141 @@ export default function CreateQuestionPage() {
             }
             addQuestions(newQs);
             showToast('অনুবাদ ও রচনা (الترجمة والإنشاء - ৪৫ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+        }}
+      />
+
+      {/* ───────────────── BANGLA 1ST PAPER MCQ BUILDER MODAL (30 Marks) ───────────────── */}
+      <BanglaMcqBuilderModal
+        isOpen={isBanglaMcqModalOpen}
+        onClose={() => setIsBanglaMcqModalOpen(false)}
+        grade={headerConfig.grade || '১০ম শ্রেণি'}
+        subject={headerConfig.subject || 'বাংলা ১ম পত্র'}
+        allGroups={banglaMcqGroups}
+        activeGroupId={activeBanglaMcqGroupId}
+        onSelectGroupId={setActiveBanglaMcqGroupId}
+        onSave={(newQs, mode, targetGroupId, proceedToCq) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('বহুনির্বাচনি (MCQ) অংশ সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('বহুনির্বাচনি অভীক্ষা (MCQ - ৩০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+          if (proceedToCq) {
+            if (isBangla2ndPaper(headerConfig.subject, headerConfig.subjectCode)) {
+              handleOpenBangla2ndSscWrittenModal();
+            } else {
+              handleOpenBanglaCqModal();
+            }
+          }
+        }}
+      />
+
+      {/* ───────────────── BANGLA 1ST PAPER CQ BUILDER MODAL (70 Marks) ───────────────── */}
+      <BanglaCqBuilderModal
+        isOpen={isBanglaCqModalOpen}
+        onClose={() => setIsBanglaCqModalOpen(false)}
+        grade={headerConfig.grade || '১০ম শ্রেণি'}
+        subject={headerConfig.subject || 'বাংলা ১ম পত্র'}
+        allGroups={banglaCqGroups}
+        activeGroupId={activeBanglaCqGroupId}
+        onSelectGroupId={setActiveBanglaCqGroupId}
+        onSave={(newQs, mode, targetGroupId) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('বাংলা ১ম পত্রের সৃজনশীল (CQ) অংশ সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('বাংলা ১ম পত্রের সৃজনশীল প্রশ্ন (CQ - ৭০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+        }}
+      />
+
+      {/* ───────────────── BANGLA 2ND PAPER (CLASS 6–10 & DAKHIL) WRITTEN BUILDER MODAL (70 Marks) ───────────────── */}
+      <Bangla2ndSscWrittenModal
+        isOpen={isBangla2ndSscWrittenModalOpen}
+        onClose={() => setIsBangla2ndSscWrittenModalOpen(false)}
+        grade={headerConfig.grade || '১০ম শ্রেণি (এসএসসি)'}
+        subject={headerConfig.subject || 'বাংলা ২য় পত্র'}
+        allGroups={bangla2ndSscWrittenGroups}
+        activeGroupId={activeBangla2ndSscWrittenGroupId}
+        onSelectGroupId={setActiveBangla2ndSscWrittenGroupId}
+        onSave={(newQs, mode, targetGroupId) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('বাংলা ২য় পত্রের রচনামূলক (নির্মিতি - ৭০) অংশ সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('বাংলা ২য় পত্রের রচনামূলক প্রশ্ন (নির্মিতি - ৭০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+        }}
+      />
+
+      {/* ───────────────── BANGLA 2ND PAPER (HSC & ALIM) GRAMMAR BUILDER MODAL (Q1–Q6: 30 Marks) ───────────────── */}
+      <Bangla2ndHscGrammarModal
+        isOpen={isBangla2ndHscGrammarModalOpen}
+        onClose={() => setIsBangla2ndHscGrammarModalOpen(false)}
+        grade={headerConfig.grade || 'দ্বাদশ শ্রেণি (এইচএসসি)'}
+        subject={headerConfig.subject || 'বাংলা ২য় পত্র'}
+        allGroups={bangla2ndHscGrammarGroups}
+        activeGroupId={activeBangla2ndHscGrammarGroupId}
+        onSelectGroupId={setActiveBangla2ndHscGrammarGroupId}
+        onSave={(newQs, mode, targetGroupId, proceedToNirmiti) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('বাংলা ২য় পত্রের ব্যাকরণ অংশ (১–৬ নং প্রশ্ন) সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('বাংলা ২য় পত্রের ব্যাকরণ অংশ (১–৬ নং প্রশ্ন : ৩০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+          if (proceedToNirmiti) {
+            handleOpenBangla2ndHscNirmitiModal();
+          }
+        }}
+      />
+
+      {/* ───────────────── BANGLA 2ND PAPER (HSC & ALIM) NIRMITI BUILDER MODAL (Q7–Q12: 70 Marks) ───────────────── */}
+      <Bangla2ndHscNirmitiModal
+        isOpen={isBangla2ndHscNirmitiModalOpen}
+        onClose={() => setIsBangla2ndHscNirmitiModalOpen(false)}
+        grade={headerConfig.grade || 'দ্বাদশ শ্রেণি (এইচএসসি)'}
+        subject={headerConfig.subject || 'বাংলা ২য় পত্র'}
+        allGroups={bangla2ndHscNirmitiGroups}
+        activeGroupId={activeBangla2ndHscNirmitiGroupId}
+        onSelectGroupId={setActiveBangla2ndHscNirmitiGroupId}
+        onSave={(newQs, mode, targetGroupId) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('বাংলা ২য় পত্রের নির্মিতি অংশ (৭–১২ নং প্রশ্ন) সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('বাংলা ২য় পত্রের নির্মিতি অংশ (৭–১২ নং প্রশ্ন : ৭০ নম্বর) পেপারে যুক্ত হয়েছে!');
           }
         }}
       />

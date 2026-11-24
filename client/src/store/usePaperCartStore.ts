@@ -157,7 +157,7 @@ export const usePaperCartStore = create<PaperCartState>()(
       headerConfig: defaultHeaderConfig,
       layoutConfig: defaultLayoutConfig,
       sets: [],
-      activeSet: 'Set A',
+      activeSet: '',
       past: [],
       future: [],
       isNavbarVisible: true,
@@ -520,7 +520,7 @@ export const usePaperCartStore = create<PaperCartState>()(
           questions: [],
           sections: [],
           sets: [],
-          activeSet: 'Set A',
+          activeSet: '',
         }));
       },
 
@@ -533,7 +533,7 @@ export const usePaperCartStore = create<PaperCartState>()(
           sections: data.sections !== undefined ? data.sections : state.sections,
           questions: data.questions !== undefined ? data.questions : state.questions,
           sets: [],
-          activeSet: 'Set A',
+          activeSet: '',
         }));
       },
 
@@ -554,7 +554,7 @@ export const usePaperCartStore = create<PaperCartState>()(
                 ...state.headerConfig,
                 headerPreset: 'ALIA',
                 educationStream: 'ALIA',
-                bismillahText: state.headerConfig.bismillahText || 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+                bismillahText: undefined,
               },
             };
           }
@@ -570,7 +570,7 @@ export const usePaperCartStore = create<PaperCartState>()(
                   : state.headerConfig.institutionName,
                 institutionAddress: state.headerConfig.institutionAddress || 'ঢাকা, বাংলাদেশ',
                 examTitle: 'মারহালা / বার্ষিক পরীক্ষা - ১৪৪৭ হি.',
-                bismillahText: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+                bismillahText: undefined,
                 kitab: state.headerConfig.kitab || state.headerConfig.subject || 'শরহে বেকায়া (ফিকহ)',
                 jamat: state.headerConfig.jamat || 'মিশকাত জামাত',
                 questionsToAnswer: 5,
@@ -848,7 +848,12 @@ export const usePaperCartStore = create<PaperCartState>()(
         hasCompletedSetup: state.hasCompletedSetup,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
+        if (state) {
+          if (!state.sets || state.sets.length === 0) {
+            state.setActiveSet('');
+          }
+          state.setHasHydrated(true);
+        }
       },
     }
   )

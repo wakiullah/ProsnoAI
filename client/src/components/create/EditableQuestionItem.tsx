@@ -239,9 +239,12 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
       question.groupRole !== 'ikhtibar_q3_title'
   );
 
-  const defaultMarksDisplay = isGroupSubItem
-    ? ''
-    : (numberingFormat === 'ar' ? formatMarksBadge(question.marks, 'ar') : `[${question.marks}]`);
+  const defaultMarksDisplay =
+    isGroupSubItem ||
+    question.typology === 'CQ' ||
+    (!isRTL && (question.typology === 'SIMPLE_MCQ' || question.typology === 'MULTIPLE_COMPLETION_MCQ'))
+      ? ''
+      : (numberingFormat === 'ar' ? formatMarksBadge(question.marks, 'ar') : `[${question.marks}]`);
   const rawMarksDisplay = question.customMarksText !== undefined
     ? question.customMarksText
     : (question.marks ? defaultMarksDisplay : '');
@@ -419,9 +422,13 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
   };
 
   const correctOption = (question.options || []).find((o) => o.isCorrect);
+  const isBanglaMcq =
+    !isRTL &&
+    (question.typology === 'SIMPLE_MCQ' || question.typology === 'MULTIPLE_COMPLETION_MCQ');
   const isProseStimulus =
     question.typology === 'CQ' ||
-    question.typology === 'PASSAGE_GROUP';
+    question.typology === 'PASSAGE_GROUP' ||
+    isBanglaMcq;
   const isParagraphStem =
     isProseStimulus ||
     question.typology === 'PARAGRAPH_WRITING' ||
@@ -486,8 +493,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           : ''
       }`}
     >
-      {/* Top Drag-to-Resize Spacing Handle */}
-      {!isMeasuring && (
+      {/* Top Drag-to-Resize Spacing Handle (Only active when question is selected) */}
+      {!isMeasuring && isSelected && (
         <QuestionSpacingHandle
           edge="top"
           value={question.spacingTop ?? 0}
@@ -531,18 +538,12 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           )}
 
           {/* Direct Smart Modal Editor shortcut on Passage or Section Groups */}
-          {(question.typology === 'PASSAGE_ONLY' ||
-            (question.groupId &&
-              (question.groupRole === 'passage' ||
-                question.groupRole === 'banner' ||
-                question.groupRole === 'q5_summary' ||
-                question.groupRole === 'q8_with_clues' ||
-                question.groupRole === 'q10_hiwar'))) &&
+          {(question.typology === 'PASSAGE_ONLY' || Boolean(question.groupId)) &&
             onEditNasrulMadroos && (
               <button
                 onClick={() => onEditNasrulMadroos(question)}
                 className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded font-bold text-[10px] transition"
-                title="এই সেকশন বা নস এর প্রশ্নাবলি একসাথে মডালে এডিট করুন"
+                title="এই সেকশনের প্রশ্নাবলি একসাথে মডালে এডিট করুন"
               >
                 <BookOpen className="w-3 h-3 text-emerald-700" />
                 <span>মডালে এডিট</span>
@@ -852,6 +853,283 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             </div>
           )}
         </div>
+      ) : question.groupRole === 'bangla2nd_hsc_pair' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── BANGLA 2ND PAPER (HSC / ALIM Q1–Q11: १। (ক) ... ০৫ / অথবা, / (খ) ...) ───────────────── */
+        <div className="my-1 font-serif text-[1em] text-slate-900 space-y-1">
+          {(() => {
+            const subKa = question.subQuestions[0];
+            const subKha = question.subQuestions[1];
+            const ROMANS = ['(i)', '(ii)', '(iii)', '(iv)', '(v)', '(vi)', '(vii)', '(viii)', '(ix)', '(x)'];
+
+            const renderSubBody = (sub: typeof subKa, sIdx: number) => {
+              if (!sub || !sub.questionText?.trim()) return null;
+              if (sub.bloomLevel === 'application') {
+                const lines = sub.questionText
+                  .split('\n')
+                  .map((l) => l.trim())
+                  .filter(Boolean);
+                if (lines.length === 0) return null;
+                return (
+                  <div className="pl-7 space-y-0.5 pt-0.5 text-[0.96em]">
+                    {lines.map((line, lIdx) => (
+                      <div key={lIdx} className="flex items-baseline gap-2">
+                        <span className="italic font-serif min-w-[28px] text-right shrink-0">
+                          {ROMANS[lIdx] || `(${lIdx + 1})`}
+                        </span>
+                        <span className="flex-1">
+                          <MultiScriptText text={line} />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              return (
+                <div
+                  contentEditable={isEditingText}
+                  data-editable-field="true"
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                  className="pl-7 pt-0.5 text-[0.96em] whitespace-pre-line text-justify outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                >
+                  <MultiScriptText text={sub.questionText} />
+                </div>
+              );
+            };
+
+            return (
+              <>
+                {/* Top Row: ১। (ক) [Prompt] ... [Marks ০৫/১০] */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                    {qNumberDisplay ? (
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={handleNumberBlur}
+                        className="q-number font-normal text-slate-900 shrink-0 min-w-[22px] outline-none"
+                      >
+                        {qNumberDisplay}
+                      </span>
+                    ) : null}
+                    <span className="shrink-0">(ক)</span>
+                    <span
+                      contentEditable={isEditingText}
+                      data-editable-field="true"
+                      suppressContentEditableWarning
+                      onBlur={(e) => {
+                        const text = e.currentTarget.innerText.trim();
+                        const updated = [...(question.subQuestions || [])];
+                        if (updated[0]) {
+                          updated[0] = { ...updated[0], bloomTitle: text };
+                          onUpdate({ ...question, subQuestions: updated });
+                        }
+                      }}
+                      className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                    >
+                      <MultiScriptText
+                        text={subKa?.bloomTitle || 'প্রশ্নের অংশ (ক) লিখুন...'}
+                      />
+                    </span>
+                  </div>
+                  {marksDisplay ? (
+                    <span
+                      contentEditable={isEditingText}
+                      data-editable-field="true"
+                      suppressContentEditableWarning
+                      onBlur={handleMarksBlur}
+                      className="q-marks shrink-0 text-[0.95em] text-slate-900 ps-2 outline-none"
+                    >
+                      {marksDisplay}
+                    </span>
+                  ) : null}
+                </div>
+
+                {renderSubBody(subKa, 0)}
+
+                {subKha && (
+                  <>
+                    <div className="text-center py-0.5 text-[0.96em] text-slate-900">
+                      অথবা,
+                    </div>
+                    <div className="flex items-start gap-1.5 pl-6">
+                      <span className="shrink-0">(খ)</span>
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => {
+                          const text = e.currentTarget.innerText.trim();
+                          const updated = [...(question.subQuestions || [])];
+                          if (updated[1]) {
+                            updated[1] = { ...updated[1], bloomTitle: text };
+                            onUpdate({ ...question, subQuestions: updated });
+                          }
+                        }}
+                        className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        <MultiScriptText
+                          text={subKha.bloomTitle || 'প্রশ্নের অংশ (খ) লিখুন...'}
+                        />
+                      </span>
+                    </div>
+                    {renderSubBody(subKha, 1)}
+                  </>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'bangla2nd_ssc_sarangsho' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── BANGLA 2ND PAPER (CLASS 6–10 Q3: ৩। (ক) সারাংশ লেখ : ১০ ... অথবা, (খ) সারমর্ম লেখ :) ───────────────── */
+        <div className="my-1 font-serif text-[1em] text-slate-900 space-y-1">
+          {(() => {
+            const subKa = question.subQuestions[0];
+            const subKha = question.subQuestions[1];
+            return (
+              <>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                    {qNumberDisplay ? (
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={handleNumberBlur}
+                        className="q-number shrink-0 min-w-[20px] outline-none"
+                      >
+                        {qNumberDisplay}
+                      </span>
+                    ) : null}
+                    <span className="shrink-0">(ক)</span>
+                    <span className="flex-1">
+                      <MultiScriptText text={subKa?.bloomTitle || 'সারাংশ লেখ :'} />
+                    </span>
+                  </div>
+                  {marksDisplay ? (
+                    <span
+                      contentEditable={isEditingText}
+                      data-editable-field="true"
+                      suppressContentEditableWarning
+                      onBlur={handleMarksBlur}
+                      className="q-marks shrink-0 text-[0.95em] text-slate-900 ps-2 outline-none"
+                    >
+                      {marksDisplay}
+                    </span>
+                  ) : null}
+                </div>
+
+                {subKa?.questionText && (
+                  <div
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleCqPartBlur(0, e)}
+                    className="pl-7 text-[0.96em] whitespace-pre-line text-justify outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                  >
+                    <MultiScriptText text={subKa.questionText} />
+                  </div>
+                )}
+
+                {subKha && (
+                  <>
+                    <div className="flex items-start gap-1.5 pt-1">
+                      <span className="shrink-0">অথবা, (খ)</span>
+                      <span className="flex-1">
+                        <MultiScriptText text={subKha.bloomTitle || 'সারমর্ম লেখ :'} />
+                      </span>
+                    </div>
+                    {subKha.questionText && (
+                      <div
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCqPartBlur(1, e)}
+                        className="pl-7 text-[0.96em] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        <MultiScriptText text={subKha.questionText} />
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      ) : (question.groupRole === 'bangla2nd_ssc_athaba' ||
+          question.groupRole === 'bangla2nd_ssc_choices' ||
+          question.groupRole === 'bangla2nd_hsc_essay') &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── BANGLA 2ND PAPER (CHOICE QUESTIONS Q1, Q2, Q4, Q5, Q6 & HSC Q12) ───────────────── */
+        <div className="my-1 font-serif text-[1em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-1.5 flex-1 min-w-0">
+              {qNumberDisplay ? (
+                <span
+                  contentEditable={isEditingText}
+                  data-editable-field="true"
+                  suppressContentEditableWarning
+                  onBlur={handleNumberBlur}
+                  className="q-number shrink-0 min-w-[20px] outline-none"
+                >
+                  {qNumberDisplay}
+                </span>
+              ) : null}
+              <div
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={handleStemBlur}
+                className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+              >
+                <MultiScriptText text={question.stemOrPassage} />
+              </div>
+            </div>
+            {marksDisplay ? (
+              <span
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={handleMarksBlur}
+                className="q-marks shrink-0 text-[0.95em] text-slate-900 ps-2 outline-none"
+              >
+                {marksDisplay}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="space-y-1 pt-0.5 text-[0.96em]">
+            {question.subQuestions.map((sub, sIdx) => {
+              const labelText = sub.bloomTitle || `(${sub.part})`;
+              const hasAthaba = labelText.startsWith('অথবা');
+              return (
+                <div
+                  key={sIdx}
+                  className={`flex items-start gap-1.5 ${hasAthaba ? 'pl-0' : 'pl-5'}`}
+                >
+                  <span className="shrink-0">{labelText}</span>
+                  <span
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                    className="flex-1 whitespace-pre-line text-justify outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                  >
+                    <MultiScriptText
+                      text={sub.questionText || `বিকল্প ${labelText} লিখুন...`}
+                    />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       ) : (
         <>
           {/* ───────────────── BOARD STANDARD QUESTION HEADER & STEM ───────────────── */}
@@ -989,6 +1267,9 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               </span>
             </div>
           ))}
+          {!isRTL && question.typology === 'MULTIPLE_COMPLETION_MCQ' && (
+            <div className="pt-0.5 font-normal text-slate-900">নিচের কোনটি সঠিক?</div>
+          )}
         </div>
       )}
 
@@ -997,8 +1278,11 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
         question.typology === 'MULTIPLE_COMPLETION_MCQ' ||
         question.typology === 'PASSAGE_GROUP') &&
         question.options &&
-        question.options.length > 0 && (
-        <div className={`grid grid-cols-2 gap-x-4 gap-y-1 ${isRTL ? 'pr-4' : 'pl-5'} pt-1 text-[0.92em] font-serif`}>
+        question.options.length > 0 && (() => {
+          const maxOptLen = Math.max(...question.options.map((o) => (o.text || '').length));
+          const useFourCols = !isRTL && maxOptLen <= 12;
+          return (
+        <div className={`grid ${useFourCols ? 'grid-cols-4 gap-x-2' : 'grid-cols-2 gap-x-4'} gap-y-1 ${isRTL ? 'pr-4' : 'pl-5'} pt-1 text-[0.92em] font-serif`}>
           {question.options.map((opt, optIdx) => (
             <div
               key={optIdx}
@@ -1016,7 +1300,7 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                 }`}
                 title="সঠিক উত্তর হিসেবে চিহ্নিত করতে ক্লিক করুন"
               >
-                ({opt.label})
+                {!isRTL ? `${['ক', 'খ', 'গ', 'ঘ'][optIdx] || opt.label})` : `(${opt.label})`}
               </span>
 
               {/* Option Text — Direct ContentEditable */}
@@ -1037,13 +1321,16 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             </div>
           ))}
         </div>
-      )}
+          );
+        })()}
 
       {/* ───────────────── WORD CLUES BOX (صندوق الكلمات - শূন্যস্থান পূরণের শব্দ বাক্স) ───────────────── */}
       {!parsedMultiLine && renderWordCluesTable()}
 
       {/* ───────────────── SUB-QUESTIONS (Arabic Comprehension & CQ Parts) ───────────────── */}
-      {question.subQuestions && question.subQuestions.length > 0 && (
+      {!question.groupRole?.startsWith('bangla2nd_') &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 && (
         <div className={`pt-1.5 space-y-1 text-[0.92em] font-serif ${isRTL ? 'pr-2' : 'pl-4'}`}>
           {question.subQuestions.map((sub, sIdx) => {
             const isParagraphSub =
@@ -1071,7 +1358,7 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                     className="font-bold text-slate-900 select-text outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded ps-0 pe-0.5 cursor-text shrink-0"
                     title="ক্লিক করে সাব-প্রশ্ন বর্ণ (الف, ب, ক, খ) এডিট করুন"
                   >
-                    ({displayPart})
+                    {question.typology === 'CQ' && !isRTL ? `${displayPart}.` : `(${displayPart})`}
                   </span>
                   <span
                     contentEditable={isEditingText}
@@ -1086,6 +1373,11 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                   >
                     <MultiScriptText text={sub.questionText} />
                   </span>
+                  {question.typology === 'CQ' && sub.marks ? (
+                    <span className="font-mono text-[0.92em] font-bold text-slate-700 shrink-0 ps-1 select-none">
+                      {['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯', '১০'][sub.marks] || sub.marks}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             );
@@ -1200,8 +1492,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
         </div>
       )}
 
-      {/* Bottom Drag-to-Resize Spacing Handle */}
-      {!isMeasuring && (
+      {/* Bottom Drag-to-Resize Spacing Handle (Only active when question is selected) */}
+      {!isMeasuring && isSelected && (
         <QuestionSpacingHandle
           edge="bottom"
           value={question.spacingBottom ?? 0}

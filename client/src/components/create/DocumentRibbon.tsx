@@ -84,6 +84,16 @@ interface DocumentRibbonProps {
   ikhtibarCount?: number;
   onOpenTarjamaInshaModal?: () => void;
   tarjamaInshaCount?: number;
+  onOpenBanglaMcqModal?: () => void;
+  banglaMcqCount?: number;
+  onOpenBanglaCqModal?: () => void;
+  banglaCqCount?: number;
+  onOpenBangla2ndSscWrittenModal?: () => void;
+  bangla2ndSscWrittenCount?: number;
+  onOpenBangla2ndHscGrammarModal?: () => void;
+  bangla2ndHscGrammarCount?: number;
+  onOpenBangla2ndHscNirmitiModal?: () => void;
+  bangla2ndHscNirmitiCount?: number;
   onOpenSettingsModal?: () => void;
   onAutoRenumber?: () => void;
   onStripAllHarakat?: () => void;
@@ -196,6 +206,16 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
   ikhtibarCount = 0,
   onOpenTarjamaInshaModal,
   tarjamaInshaCount = 0,
+  onOpenBanglaMcqModal,
+  banglaMcqCount = 0,
+  onOpenBanglaCqModal,
+  banglaCqCount = 0,
+  onOpenBangla2ndSscWrittenModal,
+  bangla2ndSscWrittenCount = 0,
+  onOpenBangla2ndHscGrammarModal,
+  bangla2ndHscGrammarCount = 0,
+  onOpenBangla2ndHscNirmitiModal,
+  bangla2ndHscNirmitiCount = 0,
   onAutoRenumber,
   onStripAllHarakat,
   onAutoFitPage,
@@ -220,6 +240,38 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
       headerConfig.subject?.includes('قواعد اللغة العربية') ||
       headerConfig.subject?.includes('কাওয়াইদুল') ||
       headerConfig.subjectCode === '১৩৪'
+    );
+
+  const isBangla2ndPaper =
+    !isArabicPaper &&
+    Boolean(
+      headerConfig.subject?.includes('বাংলা ২য়') ||
+        headerConfig.subject?.includes('বাংলা ২য়') ||
+        headerConfig.subject?.includes('বাংলা দ্বিতীয়') ||
+        headerConfig.subject?.includes('বাংলা দ্বিতীয়') ||
+        (headerConfig.subjectCode === '১০২' && headerConfig.subject?.includes('বাংলা')) ||
+        (headerConfig.subjectCode === '১৩৬' && headerConfig.subject?.includes('বাংলা'))
+    );
+
+  const isBangla1stPaper =
+    !isArabicPaper &&
+    !isBangla2ndPaper &&
+    Boolean(
+      headerConfig.subject?.includes('বাংলা ১ম') ||
+      headerConfig.subject?.includes('বাংলা প্রথম') ||
+      headerConfig.subject?.includes('সাহিত্যপাঠ') ||
+      headerConfig.subjectCode === '১০১' ||
+      headerConfig.subjectCode === '১৩৫'
+    );
+
+  const isHscOrAlim =
+    Boolean(
+      headerConfig.grade?.includes('একাদশ') ||
+        headerConfig.grade?.includes('দ্বাদশ') ||
+        headerConfig.grade?.includes('এইচএসসি') ||
+        headerConfig.grade?.toLowerCase().includes('hsc') ||
+        headerConfig.grade?.includes('আলিম') ||
+        headerConfig.grade?.toLowerCase().includes('alim')
     );
 
   return (
@@ -1085,6 +1137,192 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
                   <span>+ قسم جديد (নতুন বিভাগ)</span>
                 </button>
               </>
+            ) : isBangla1stPaper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">বাংলা ১ম পত্র (প্রশ্ন যোগ করুন):</span>
+
+                {onOpenBanglaMcqModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenBanglaMcqModal}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl font-bold transition shadow-xs"
+                    title="বাংলা ১ম পত্র — ৩০টি বহুনির্বাচনি অভীক্ষা (সাধারণ, বহুপদী ও উদ্দীপকভিত্তিক) তৈরি বা এডিট করুন"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {banglaMcqCount > 0
+                        ? 'বহুনির্বাচনি অভীক্ষা (এডিট / নতুন)'
+                        : '+ বহুনির্বাচনি অভীক্ষা (MCQ - ৩০)'}
+                    </span>
+                    {banglaMcqCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {banglaMcqCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {onOpenBanglaCqModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenBanglaCqModal}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold transition shadow-xs"
+                    title="বাংলা ১ম পত্র — সৃজনশীল প্রশ্ন (৭০ নম্বর: গদ্য, কবিতা, উপন্যাস ও নাটক / আলিম বিভাগ) তৈরি বা এডিট করুন"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {banglaCqCount > 0
+                        ? 'সৃজনশীল প্রশ্ন (এডিট / নতুন)'
+                        : '+ সৃজনশীল প্রশ্ন (CQ - ৭০)'}
+                    </span>
+                    {banglaCqCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {banglaCqCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                  title="যেকোনো স্থানে কাস্টম ফাঁকা জায়গা (Spacer) যোগ করুন"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ ফাঁকা স্পেসার</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onInsertSection}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition shadow-2xs"
+                  title="ক-বিভাগ বা খ-বিভাগ যুক্ত করুন"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span>+ নতুন বিভাগ (Section)</span>
+                </button>
+              </>
+            ) : isBangla2ndPaper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">
+                  {isHscOrAlim ? 'বাংলা ২য় পত্র (HSC/আলিম):' : 'বাংলা ২য় পত্র (৬ষ্ঠ–১০ম/দাখিল):'}
+                </span>
+
+                {isHscOrAlim ? (
+                  <>
+                    {onOpenBangla2ndHscGrammarModal && (
+                      <button
+                        type="button"
+                        onClick={onOpenBangla2ndHscGrammarModal}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl font-bold transition shadow-xs"
+                        title="বাংলা ২য় পত্র (HSC ও আলিম) — ব্যাকরণ অংশ (১–৬ নং প্রশ্ন: ৩০ নম্বর)"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                        <span>
+                          {bangla2ndHscGrammarCount > 0
+                            ? 'ব্যাকরণ অংশ ১–৬ নং (এডিট / নতুন)'
+                            : '+ ব্যাকরণ অংশ (১–৬ নং : ৩০ নম্বর)'}
+                        </span>
+                        {bangla2ndHscGrammarCount > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                            {bangla2ndHscGrammarCount}
+                          </span>
+                        )}
+                      </button>
+                    )}
+
+                    {onOpenBangla2ndHscNirmitiModal && (
+                      <button
+                        type="button"
+                        onClick={onOpenBangla2ndHscNirmitiModal}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold transition shadow-xs"
+                        title="বাংলা ২য় পত্র (HSC ও আলিম) — নির্মিতি অংশ (৭–১২ নং প্রশ্ন: ৭০ নম্বর)"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                        <span>
+                          {bangla2ndHscNirmitiCount > 0
+                            ? 'নির্মিতি অংশ ৭–১২ নং (এডিট / নতুন)'
+                            : '+ নির্মিতি অংশ (৭–১২ নং : ৭০ নম্বর)'}
+                        </span>
+                        {bangla2ndHscNirmitiCount > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                            {bangla2ndHscNirmitiCount}
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {onOpenBanglaMcqModal && (
+                      <button
+                        type="button"
+                        onClick={onOpenBanglaMcqModal}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl font-bold transition shadow-xs"
+                        title="বাংলা ২য় পত্র — ৩০টি বহুনির্বাচনি অভীক্ষা (সাধারণ, বহুপদী ও উদ্দীপকভিত্তিক) তৈরি বা এডিট করুন"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                        <span>
+                          {banglaMcqCount > 0
+                            ? 'বহুনির্বাচনি অভীক্ষা (এডিট / নতুন)'
+                            : '+ বহুনির্বাচনি অভীক্ষা (MCQ - ৩০)'}
+                        </span>
+                        {banglaMcqCount > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                            {banglaMcqCount}
+                          </span>
+                        )}
+                      </button>
+                    )}
+
+                    {onOpenBangla2ndSscWrittenModal && (
+                      <button
+                        type="button"
+                        onClick={onOpenBangla2ndSscWrittenModal}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold transition shadow-xs"
+                        title="বাংলা ২য় পত্র — রচনামূলক প্রশ্ন (নির্মিতি - ৭০ নম্বর: অনুচ্ছেদ, পত্র, সারাংশ/সারমর্ম, ভাব-সম্প্রসারণ, প্রতিবেদন ও প্রবন্ধ)"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                        <span>
+                          {bangla2ndSscWrittenCount > 0
+                            ? 'রচনামূলক প্রশ্ন (এডিট / নতুন)'
+                            : '+ রচনামূলক প্রশ্ন (নির্মিতি - ৭০)'}
+                        </span>
+                        {bangla2ndSscWrittenCount > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                            {bangla2ndSscWrittenCount}
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </>
+                )}
+
+                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                  title="যেকোনো স্থানে কাস্টম ফাঁকা জায়গা (Spacer) যোগ করুন"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ ফাঁকা স্পেসার</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onInsertSection}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition shadow-2xs"
+                  title="ক-বিভাগ বা খ-বিভাগ যুক্ত করুন"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span>+ নতুন বিভাগ (Section)</span>
+                </button>
+              </>
             ) : (
               <>
                 <span className="text-[11px] font-bold text-slate-500">প্রশ্ন যোগ করুন:</span>
@@ -1125,28 +1363,31 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
                   <span>+ মিলকরণ ছক</span>
                 </button>
 
-                {/* Madrasah Specific Question Types */}
-                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+                {headerConfig.educationStream !== 'GENERAL' && (
+                  <>
+                    <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
 
-                <button
-                  type="button"
-                  onClick={() => onInsertQuestion('TAHQEEQ_SIGHA')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-300 text-emerald-950 rounded-xl font-bold transition shadow-2xs"
-                  title="মাদ্রাসা শব্দ বিশ্লেষণ ছক (সিগাহ, বাহাস, বাব, মাদ্দা, অর্থ)"
-                >
-                  <span className="font-serif font-bold text-emerald-700">تحقيق</span>
-                  <span>+ তাহকীক ও সিগাহ ছক</span>
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => onInsertQuestion('TAHQEEQ_SIGHA')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-300 text-emerald-950 rounded-xl font-bold transition shadow-2xs"
+                      title="মাদ্রাসা শব্দ বিশ্লেষণ ছক (সিগাহ, বাহাস, বাব, মাদ্দা, অর্থ)"
+                    >
+                      <span className="font-serif font-bold text-emerald-700">تحقيق</span>
+                      <span>+ তাহকীক ও সিগাহ ছক</span>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => onInsertQuestion('TARKIB_IRAB')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-300 text-emerald-950 rounded-xl font-bold transition shadow-2xs"
-                  title="আরবি তারকীব ও হরকত বিশ্লেষণ প্রশ্ন"
-                >
-                  <span className="font-serif font-bold text-emerald-700">إعراب</span>
-                  <span>+ তারকীব ও এরাব</span>
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => onInsertQuestion('TARKIB_IRAB')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-300 text-emerald-950 rounded-xl font-bold transition shadow-2xs"
+                      title="আরবি তারকীব ও হরকত বিশ্লেষণ প্রশ্ন"
+                    >
+                      <span className="font-serif font-bold text-emerald-700">إعراب</span>
+                      <span>+ তারকীব ও এরাব</span>
+                    </button>
+                  </>
+                )}
 
                 <button
                   type="button"
@@ -1297,29 +1538,45 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition shadow-xs"
             >
               <Shuffle className="w-3.5 h-3.5" />
-              <span>সেট শাফল করুন (Set A/B/C/D)</span>
+              <span>সেট তৈরি ও শাফল করুন (ক/খ/গ/ঘ বা A/B/C/D)</span>
             </button>
 
             <span className="text-slate-400">|</span>
 
-            <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
-              <span>সক্রিয় সেট:</span>
-              <div className="flex gap-1">
-                {availableSets.map((s) => (
+            {availableSets.length > 0 ? (
+              <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+                <span>সক্রিয় সেট:</span>
+                <div className="flex gap-1">
+                  {availableSets.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => onSelectSet(s)}
+                      className={`px-2.5 py-0.5 rounded-lg font-bold transition ${
+                        activeSetName === s
+                          ? 'bg-purple-700 text-white shadow-2xs'
+                          : 'bg-white border border-purple-200 text-purple-800 hover:bg-purple-50'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
                   <button
-                    key={s}
-                    onClick={() => onSelectSet(s)}
+                    onClick={() => onSelectSet('')}
                     className={`px-2.5 py-0.5 rounded-lg font-bold transition ${
-                      activeSetName === s
-                        ? 'bg-purple-700 text-white shadow-2xs'
-                        : 'bg-white border border-purple-200 text-purple-800 hover:bg-purple-50'
+                      !activeSetName
+                        ? 'bg-slate-700 text-white shadow-2xs'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    {s}
+                    সেট ছাড়া
                   </button>
-                ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <span className="text-xs text-slate-500 font-medium">
+                বর্তমানে কোনো সেট নেই (সাধারণ একক প্রশ্নপত্র)
+              </span>
+            )}
           </div>
         )}
 

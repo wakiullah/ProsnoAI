@@ -85,33 +85,29 @@ export const QuestionSpacingHandle: React.FC<QuestionSpacingHandleProps> = ({
 
   return (
     <div
-      onPointerDown={handlePointerDown}
-      onDoubleClick={handleDoubleClick}
-      title={`${label} স্পেস: ${formattedVal} (টেনে বড়/ছোট করুন • ডাবল-ক্লিকে রিসেট)`}
-      className={`print:hidden absolute left-0 right-0 z-20 flex items-center justify-center cursor-ns-resize select-none touch-none transition-opacity duration-150 ${
-        edge === 'top' ? '-top-1 h-2.5' : '-bottom-1 h-2.5'
-      } ${
-        isDragging
-          ? 'opacity-100'
-          : 'opacity-0 group-hover:opacity-100'
+      className={`print:hidden absolute left-0 right-0 z-20 flex items-center justify-center pointer-events-none select-none ${
+        edge === 'top' ? '-top-1.5 h-3' : '-bottom-1.5 h-3'
       }`}
     >
       {/* Subtle dashed guide line */}
       <div
         className={`w-full border-t border-dashed transition-colors ${
-          isDragging
-            ? 'border-emerald-600'
-            : 'border-emerald-400/60 hover:border-emerald-500'
+          isDragging ? 'border-emerald-600' : 'border-emerald-500/70'
         }`}
       />
 
-      {/* Centered sleek grab pill + live px badge */}
-      <div className="absolute flex items-center gap-1 pointer-events-none">
+      {/* Centered interactive grab pill + live px badge (only the center pill captures drag) */}
+      <div
+        onPointerDown={handlePointerDown}
+        onDoubleClick={handleDoubleClick}
+        title={`${label} স্পেস: ${formattedVal} (টেনে বড়/ছোট করুন • ডাবল-ক্লিকে রিসেট)`}
+        className="absolute flex items-center gap-1 px-3 py-1.5 pointer-events-auto cursor-ns-resize touch-none"
+      >
         <span
-          className={`inline-block rounded-full transition-all shadow-2xs ${
+          className={`inline-block rounded-full transition-all shadow-xs ${
             isDragging
-              ? 'w-10 h-1.5 bg-emerald-600'
-              : 'w-7 h-1 bg-emerald-500/80'
+              ? 'w-11 h-2 bg-emerald-600 ring-2 ring-emerald-300'
+              : 'w-8 h-1.5 bg-emerald-500 hover:bg-emerald-600'
           }`}
         />
         {(isDragging || displayVal !== 0) && (

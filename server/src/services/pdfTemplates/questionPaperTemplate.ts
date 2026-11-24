@@ -848,12 +848,8 @@ function renderHeaderHtml(
 
   // 2. QAWMI / BEFAQ TRADITIONAL PRESET
   if (preset === 'QAWMI') {
-    const bismillah =
-      headerConfig.bismillahText || 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
-
     return `
     <header class="exam-header" style="border-bottom: 2px solid #1e293b; padding-bottom: 8px;">
-      <div class="qawmi-bismillah">${renderMultiScriptHtml(bismillah)}</div>
       <div class="institution-name" style="font-size: 1.55em; letter-spacing: 0.5px;">${renderMultiScriptHtml(headerConfig.institutionName)}</div>
       ${
         headerConfig.institutionAddress

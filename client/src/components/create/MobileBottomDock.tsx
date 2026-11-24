@@ -71,6 +71,17 @@ interface MobileBottomDockProps {
   ikhtibarCount?: number;
   onOpenTarjamaInshaModal?: () => void;
   tarjamaInshaCount?: number;
+  // Bangla 1st & 2nd Paper Modals
+  onOpenBanglaMcqModal?: () => void;
+  banglaMcqCount?: number;
+  onOpenBanglaCqModal?: () => void;
+  banglaCqCount?: number;
+  onOpenBangla2ndSscWrittenModal?: () => void;
+  bangla2ndSscWrittenCount?: number;
+  onOpenBangla2ndHscGrammarModal?: () => void;
+  bangla2ndHscGrammarCount?: number;
+  onOpenBangla2ndHscNirmitiModal?: () => void;
+  bangla2ndHscNirmitiCount?: number;
   openInsertTrigger?: number;
 }
 
@@ -110,6 +121,16 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
   ikhtibarCount = 0,
   onOpenTarjamaInshaModal,
   tarjamaInshaCount = 0,
+  onOpenBanglaMcqModal,
+  banglaMcqCount = 0,
+  onOpenBanglaCqModal,
+  banglaCqCount = 0,
+  onOpenBangla2ndSscWrittenModal,
+  bangla2ndSscWrittenCount = 0,
+  onOpenBangla2ndHscGrammarModal,
+  bangla2ndHscGrammarCount = 0,
+  onOpenBangla2ndHscNirmitiModal,
+  bangla2ndHscNirmitiCount = 0,
   openInsertTrigger = 0,
 }) => {
   const [activeSheet, setActiveSheet] = useState<MobileSheetTab>(null);
@@ -135,6 +156,32 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
       (headerConfig.subjectCode || '') === '১৩৩');
 
   const isArabicPaper = isArabic1st || isArabic2nd;
+
+  const isBangla2nd =
+    !isArabicPaper &&
+    ((headerConfig.subject || '').includes('বাংলা ২য়') ||
+      (headerConfig.subject || '').includes('বাংলা ২য়') ||
+      (headerConfig.subject || '').includes('বাংলা দ্বিতীয়') ||
+      (headerConfig.subject || '').includes('বাংলা দ্বিতীয়') ||
+      ((headerConfig.subjectCode || '') === '১০২' && (headerConfig.subject || '').includes('বাংলা')) ||
+      ((headerConfig.subjectCode || '') === '১৩৬' && (headerConfig.subject || '').includes('বাংলা')));
+
+  const isBangla1st =
+    !isArabicPaper &&
+    !isBangla2nd &&
+    ((headerConfig.subject || '').includes('বাংলা ১ম') ||
+      (headerConfig.subject || '').includes('বাংলা প্রথম') ||
+      (headerConfig.subject || '').includes('সাহিত্যপাঠ') ||
+      (headerConfig.subjectCode || '') === '১০১' ||
+      (headerConfig.subjectCode || '') === '১৩৫');
+
+  const isHscOrAlim =
+    (headerConfig.grade || '').includes('একাদশ') ||
+    (headerConfig.grade || '').includes('দ্বাদশ') ||
+    (headerConfig.grade || '').includes('এইচএসসি') ||
+    (headerConfig.grade || '').toLowerCase().includes('hsc') ||
+    (headerConfig.grade || '').includes('আলিম') ||
+    (headerConfig.grade || '').toLowerCase().includes('alim');
 
   const fontSizePt =
     layoutConfig.customFontSizePt ||
@@ -359,44 +406,220 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
               </div>
             )}
 
-            {/* Standard Question Typologies */}
-            <div className="space-y-2">
-              <p className="text-[11px] font-bold text-slate-500 uppercase">সাধারণ প্রশ্ন ও বিভাগ</p>
-              <div className="grid grid-cols-2 gap-2">
+            {/* Bangla 1st Paper Special Sections */}
+            {isBangla1st && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-indigo-800 uppercase">
+                  বাংলা ১ম পত্র (বোর্ড কাঠামো)
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {onOpenBanglaMcqModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenBanglaMcqModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-indigo-700" />
+                        <span>+ বহুনির্বাচনি অভীক্ষা (MCQ - ৩০ নম্বর)</span>
+                      </span>
+                      {banglaMcqCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-700 text-white text-[10px]">
+                          {banglaMcqCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {onOpenBanglaCqModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenBanglaCqModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-emerald-700" />
+                        <span>+ সৃজনশীল প্রশ্ন (CQ - ৭০ নম্বর)</span>
+                      </span>
+                      {banglaCqCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px]">
+                          {banglaCqCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Bangla 2nd Paper Special Sections */}
+            {isBangla2nd && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-indigo-800 uppercase">
+                  {isHscOrAlim
+                    ? 'বাংলা ২য় পত্র (HSC ও আলিম বোর্ড কাঠামো)'
+                    : 'বাংলা ২য় পত্র (৬ষ্ঠ–১০ম ও দাখিল বোর্ড কাঠামো)'}
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {isHscOrAlim ? (
+                    <>
+                      {onOpenBangla2ndHscGrammarModal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSheet(null);
+                            onOpenBangla2ndHscGrammarModal();
+                          }}
+                          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold active:scale-98"
+                        >
+                          <span className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-indigo-700" />
+                            <span>+ ব্যাকরণ অংশ (১–৬ নং প্রশ্ন : ৩০ নম্বর)</span>
+                          </span>
+                          {bangla2ndHscGrammarCount > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-indigo-700 text-white text-[10px]">
+                              {bangla2ndHscGrammarCount}
+                            </span>
+                          )}
+                        </button>
+                      )}
+                      {onOpenBangla2ndHscNirmitiModal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSheet(null);
+                            onOpenBangla2ndHscNirmitiModal();
+                          }}
+                          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold active:scale-98"
+                        >
+                          <span className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-emerald-700" />
+                            <span>+ নির্মিতি অংশ (৭–১২ নং প্রশ্ন : ৭০ নম্বর)</span>
+                          </span>
+                          {bangla2ndHscNirmitiCount > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px]">
+                              {bangla2ndHscNirmitiCount}
+                            </span>
+                          )}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {onOpenBanglaMcqModal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSheet(null);
+                            onOpenBanglaMcqModal();
+                          }}
+                          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold active:scale-98"
+                        >
+                          <span className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-indigo-700" />
+                            <span>+ বহুনির্বাচনি অভীক্ষা (MCQ - ৩০ নম্বর)</span>
+                          </span>
+                          {banglaMcqCount > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-indigo-700 text-white text-[10px]">
+                              {banglaMcqCount}
+                            </span>
+                          )}
+                        </button>
+                      )}
+                      {onOpenBangla2ndSscWrittenModal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveSheet(null);
+                            onOpenBangla2ndSscWrittenModal();
+                          }}
+                          className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold active:scale-98"
+                        >
+                          <span className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-emerald-700" />
+                            <span>+ রচনামূলক প্রশ্ন (নির্মিতি - ৭০ নম্বর)</span>
+                          </span>
+                          {bangla2ndSscWrittenCount > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px]">
+                              {bangla2ndSscWrittenCount}
+                            </span>
+                          )}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Standard Question Typologies (Hidden when Bangla 1st or 2nd Paper is selected) */}
+            {!isBangla1st && !isBangla2nd ? (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-slate-500 uppercase">সাধারণ প্রশ্ন ও বিভাগ</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onInsertSection();
+                      setActiveSheet(null);
+                    }}
+                    className="col-span-2 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold"
+                  >
+                    <FolderPlus className="w-4 h-4 text-emerald-600" />
+                    <span>+ নতুন বিভাগ/সেকশন (ক বিভাগ)</span>
+                  </button>
+
+                  {[
+                    { id: 'SIMPLE_MCQ' as QuestionTypology, label: '+ সাধারণ MCQ' },
+                    { id: 'CQ' as QuestionTypology, label: '+ সৃজনশীল (CQ)' },
+                    { id: 'DESCRIPTIVE' as QuestionTypology, label: '+ বর্ণনামূলক' },
+                    { id: 'FILL_BLANKS' as QuestionTypology, label: '+ শূন্যস্থান' },
+                    { id: 'MATCHING' as QuestionTypology, label: '+ মিলকরণ ছক' },
+                    { id: 'PASSAGE_GROUP' as QuestionTypology, label: '+ অনুচ্ছেদ গ্রুপ' },
+                  ].map((q) => (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => {
+                        onInsertQuestion(q.id);
+                        setActiveSheet(null);
+                      }}
+                      className="px-3 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 text-slate-800 text-xs font-bold text-left shadow-2xs active:scale-95 transition"
+                    >
+                      {q.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onInsertQuestion('SPACER');
+                    setActiveSheet(null);
+                  }}
+                  className="px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold text-center"
+                >
+                  + ফাঁকা স্পেসার
+                </button>
                 <button
                   type="button"
                   onClick={() => {
                     onInsertSection();
                     setActiveSheet(null);
                   }}
-                  className="col-span-2 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold"
+                  className="px-3 py-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 text-xs font-bold text-center"
                 >
-                  <FolderPlus className="w-4 h-4 text-emerald-600" />
-                  <span>+ নতুন বিভাগ/সেকশন (ক বিভাগ)</span>
+                  + নতুন বিভাগ
                 </button>
-
-                {[
-                  { id: 'SIMPLE_MCQ' as QuestionTypology, label: '+ সাধারণ MCQ' },
-                  { id: 'CQ' as QuestionTypology, label: '+ সৃজনশীল (CQ)' },
-                  { id: 'DESCRIPTIVE' as QuestionTypology, label: '+ বর্ণনামূলক' },
-                  { id: 'FILL_BLANKS' as QuestionTypology, label: '+ শূন্যস্থান' },
-                  { id: 'MATCHING' as QuestionTypology, label: '+ মিলকরণ ছক' },
-                  { id: 'PASSAGE_GROUP' as QuestionTypology, label: '+ অনুচ্ছেদ গ্রুপ' },
-                ].map((q) => (
-                  <button
-                    key={q.id}
-                    type="button"
-                    onClick={() => {
-                      onInsertQuestion(q.id);
-                      setActiveSheet(null);
-                    }}
-                    className="px-3 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 text-slate-800 text-xs font-bold text-left shadow-2xs active:scale-95 transition"
-                  >
-                    {q.label}
-                  </button>
-                ))}
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -694,22 +917,39 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
           <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500">সক্রিয় প্রশ্ন সেট</label>
-              <div className="flex flex-wrap gap-2">
-                {availableSets.map((s) => (
+              {availableSets.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {availableSets.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => onSelectSet(s)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition ${
+                        activeSetName === s
+                          ? 'bg-emerald-600 text-white border-emerald-700'
+                          : 'bg-white text-slate-700 border-slate-200'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
                   <button
-                    key={s}
                     type="button"
-                    onClick={() => onSelectSet(s)}
+                    onClick={() => onSelectSet('')}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition ${
-                      activeSetName === s
-                        ? 'bg-emerald-600 text-white border-emerald-700'
-                        : 'bg-white text-slate-700 border-slate-200'
+                      !activeSetName
+                        ? 'bg-slate-700 text-white border-slate-800'
+                        : 'bg-white text-slate-600 border-slate-200'
                     }`}
                   >
-                    {s}
+                    সেট ছাড়া
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                  বর্তমানে প্রশ্নপত্রে কোনো সেট নেই। সেট তৈরি করতে নিচের বাটনে ট্যাপ করুন।
+                </p>
+              )}
             </div>
 
             <button
@@ -718,10 +958,10 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
                 setActiveSheet(null);
                 onOpenSetShuffler();
               }}
-              className="w-full py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl bg-purple-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-2xs"
             >
-              <Shuffle className="w-4 h-4 text-emerald-600" />
-              <span>নতুন সেট শাফল করুন (Set A/B/C/D)</span>
+              <Shuffle className="w-4 h-4" />
+              <span>সেট তৈরি ও শাফল করুন (ক/খ/গ/ঘ বা Set A/B/C/D)</span>
             </button>
 
             <div className="grid grid-cols-1 gap-2 pt-2 border-t border-slate-100">
