@@ -198,6 +198,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
     unscaledH: number;
   } | null>(null);
   const autoZoomedFromFitRef = useRef(false);
+  const zoomAnimFrameRef = useRef<number | null>(null);
   const numberingFormat: NumberingFormat = layoutConfig.numberingFormat || 'bn';
   const isTwoCol = layoutConfig.columns === 2;
   const isArabicPaper =
@@ -736,21 +737,97 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
   const scaledWidthPx = Math.ceil(unscaledWidthPx * scale);
   const scaledHeightPx = unscaledHeight > 0 ? Math.ceil(unscaledHeight * scale) : undefined;
 
-  // Canva-style Smart Auto-Zoom to a specific question on Mobile/Tablet when selected for editing
+  // Canva-style Smooth Animated Auto-Zoom to/from a specific question on Mobile/Tablet
   useEffect(() => {
     if (typeof window === 'undefined' || window.innerWidth >= 1024 || !onZoomChange) return;
+
+    const zcEl = zoomContainerRef.current;
+    const sizer = stageSizerRef.current;
+    const wrapper = canvasWrapperRef.current;
+    if (!zcEl || !sizer || !wrapper) return;
+
+    const mainScroller = wrapper.parentElement;
+    const useWindowScroll =
+      !mainScroller || mainScroller.scrollHeight <= mainScroller.clientHeight + 2;
+
+    const getScrollTop = () => (useWindowScroll ? window.scrollY : mainScroller!.scrollTop);
+    const setScrollTop = (val: number) => {
+      if (useWindowScroll) {
+        window.scrollTo({ top: val, behavior: 'instant' as ScrollBehavior });
+      } else if (mainScroller) {
+        mainScroller.scrollTop = val;
+      }
+    };
+
+    const runSmoothZoomAnimation = (
+      endZoom: number,
+      endScrollLeft: number,
+      endScrollTop: number
+    ) => {
+      if (zoomAnimFrameRef.current !== null) {
+        cancelAnimationFrame(zoomAnimFrameRef.current);
+        zoomAnimFrameRef.current = null;
+      }
+
+      const startZoom = zoomRef.current;
+      const startScrollLeft = wrapper.scrollLeft;
+      const startScrollTop = getScrollTop();
+      const durationMs = 280;
+      const startTime = performance.now();
+
+      const step = (now: number) => {
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / durationMs);
+        // Cubic ease-out for silky Canva-like deceleration
+        const ease = 1 - Math.pow(1 - t, 3);
+
+        const interpZoom = startZoom + (endZoom - startZoom) * ease;
+        const interpScale = interpZoom / 100;
+
+        sizer.style.width = `${Math.ceil(unscaledWidthPx * interpScale)}px`;
+        if (unscaledHeight > 0) {
+          sizer.style.height = `${Math.ceil(unscaledHeight * interpScale)}px`;
+        }
+        zcEl.style.transform = `scale(${interpScale})`;
+
+        wrapper.scrollLeft = Math.max(
+          0,
+          Math.round(startScrollLeft + (endScrollLeft - startScrollLeft) * ease)
+        );
+        setScrollTop(
+          Math.max(0, Math.round(startScrollTop + (endScrollTop - startScrollTop) * ease))
+        );
+
+        if (t < 1) {
+          zoomAnimFrameRef.current = requestAnimationFrame(step);
+        } else {
+          zoomAnimFrameRef.current = null;
+          prevZoomRef.current = endZoom;
+          zoomRef.current = endZoom;
+          onZoomChange(endZoom);
+        }
+      };
+
+      zoomAnimFrameRef.current = requestAnimationFrame(step);
+    };
 
     if (selectedQuestionIndex === null) {
       if (autoZoomedFromFitRef.current) {
         autoZoomedFromFitRef.current = false;
-        onZoomChange(fitZoom);
+        const startZoom = zoomRef.current;
+        const endZoom = fitZoom;
+        const startScrollTop = getScrollTop();
+        const sizerRect = sizer.getBoundingClientRect();
+        const sizerDocTop = startScrollTop + sizerRect.top;
+        const focalY = window.innerHeight / 2;
+        const oldOffsetY = Math.max(0, focalY - sizerRect.top);
+        const newOffsetY = oldOffsetY * (endZoom / startZoom);
+        const endScrollTop = Math.max(0, Math.round(sizerDocTop + newOffsetY - focalY));
+
+        runSmoothZoomAnimation(endZoom, 0, endScrollTop);
       }
       return;
     }
-
-    const zcEl = zoomContainerRef.current;
-    const wrapper = canvasWrapperRef.current;
-    if (!zcEl || !wrapper) return;
 
     const qEl = zcEl.querySelector(
       `[data-canvas-q-idx="${selectedQuestionIndex}"]`
@@ -770,26 +847,32 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
     const idealZoom = Math.floor(((vw - 24) / unscaledW) * 100);
     const targetZoom = Math.max(fitZoom + 15, Math.min(110, idealZoom));
 
-    if (zoomRef.current < targetZoom - 3) {
-      if (zoomRef.current <= fitZoom + 5) {
-        autoZoomedFromFitRef.current = true;
-      }
-      pendingQuestionFocusRef.current = {
-        unscaledX,
-        unscaledY,
-        unscaledW,
-        unscaledH,
-      };
-      onZoomChange(targetZoom);
-    } else {
-      // Already zoomed in enough — just pan horizontally to center this question's column
-      const qCenterX = (unscaledX + unscaledW / 2) * curScale;
-      wrapper.scrollTo({
-        left: Math.max(0, Math.round(qCenterX - vw / 2)),
-        behavior: 'smooth',
-      });
+    const endZoom = zoomRef.current < targetZoom - 3 ? targetZoom : zoomRef.current;
+    const endScale = endZoom / 100;
+
+    if (zoomRef.current <= fitZoom + 5 && endZoom > zoomRef.current) {
+      autoZoomedFromFitRef.current = true;
     }
-  }, [selectedQuestionIndex, fitZoom, onZoomChange]);
+
+    const qCenterX = (unscaledX + unscaledW / 2) * endScale;
+    const endScrollLeft = Math.max(0, Math.round(qCenterX - vw / 2));
+
+    const startScrollTop = getScrollTop();
+    const sizerRect = sizer.getBoundingClientRect();
+    const sizerDocTop = startScrollTop + sizerRect.top;
+    const qFocusYInStage = (unscaledY + Math.min(unscaledH / 2, 100)) * endScale;
+    const desiredViewportY = Math.round(window.innerHeight * 0.34);
+    const endScrollTop = Math.max(0, Math.round(sizerDocTop + qFocusYInStage - desiredViewportY));
+
+    runSmoothZoomAnimation(endZoom, endScrollLeft, endScrollTop);
+
+    return () => {
+      if (zoomAnimFrameRef.current !== null) {
+        cancelAnimationFrame(zoomAnimFrameRef.current);
+        zoomAnimFrameRef.current = null;
+      }
+    };
+  }, [selectedQuestionIndex, fitZoom, onZoomChange, unscaledWidthPx, unscaledHeight]);
 
   // Preserve vertical page scroll & horizontal focal position when zooming in/out
   useIsomorphicLayoutEffect(() => {

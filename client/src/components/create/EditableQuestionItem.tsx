@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   CqSubQuestion,
   ExamSection,
@@ -106,6 +106,27 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [liveSpacingTop, setLiveSpacingTop] = useState<number | null>(null);
   const [liveSpacingBottom, setLiveSpacingBottom] = useState<number | null>(null);
+  const [isEditingText, setIsEditingText] = useState(false);
+  const lastTapTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!isSelected) {
+      setIsEditingText(false);
+    }
+  }, [isSelected]);
+
+  const activateEditOnTarget = (rawTarget: EventTarget | null) => {
+    const el =
+      rawTarget instanceof HTMLElement
+        ? (rawTarget.closest('[data-editable-field="true"]') as HTMLElement | null)
+        : null;
+    setIsEditingText(true);
+    if (el) {
+      requestAnimationFrame(() => {
+        el.focus();
+      });
+    }
+  };
 
   const hasArabic = /[\u0600-\u06FF]/.test(
     (question.stemOrPassage || '') +
@@ -375,7 +396,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                   className="border border-slate-700 px-3.5 py-0.5 text-center whitespace-nowrap"
                 >
                   <span
-                    contentEditable
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
                     suppressContentEditableWarning
                     onBlur={(e) => {
                       const updated = [...(question.wordClues || [])];
@@ -429,16 +451,38 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
       }}
       dir={isRTL ? 'rtl' : 'ltr'}
       onClick={(e) => {
-        if (onSelect && !isMeasuring) {
-          e.stopPropagation();
-          onSelect();
+        if (isMeasuring) return;
+        e.stopPropagation();
+
+        const now = Date.now();
+        const isFastSecondTap = now - lastTapTimeRef.current < 340;
+        lastTapTimeRef.current = now;
+
+        if (!isSelected) {
+          onSelect?.();
+          if (isFastSecondTap) {
+            activateEditOnTarget(e.target);
+          }
+        } else if (!isEditingText) {
+          // 2nd click while already selected -> enter text edit mode on the clicked field
+          activateEditOnTarget(e.target);
         }
+      }}
+      onDoubleClick={(e) => {
+        if (isMeasuring) return;
+        e.stopPropagation();
+        if (!isSelected) {
+          onSelect?.();
+        }
+        activateEditOnTarget(e.target);
       }}
       className={`exam-question-item group relative pt-1 pb-1.5 mt-2 mb-1 transition-all select-text hover:bg-slate-50/30 rounded-sm ${
         isRTL ? 'text-right font-ar' : 'text-left'
       } ${
         isSelected
-          ? 'ring-2 ring-emerald-500/80 bg-emerald-50/20 lg:ring-0 lg:bg-transparent'
+          ? isEditingText
+            ? 'ring-2 ring-teal-600 bg-amber-50/20'
+            : 'ring-2 ring-emerald-500/85 bg-emerald-50/25'
           : ''
       }`}
     >
@@ -585,7 +629,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           >
             {qNumberDisplay ? (
               <span
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={handleNumberBlur}
                 style={{ fontWeight: 700, flexShrink: 0 }}
@@ -596,7 +641,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               </span>
             ) : null}
             <span
-              contentEditable
+              contentEditable={isEditingText}
+                    data-editable-field="true"
               suppressContentEditableWarning
               onBlur={handleStemBlur}
               style={{ fontWeight: 700, textAlign: !qNumberDisplay ? 'center' : (isRTL ? 'right' : 'left'), flex: 1 }}
@@ -608,7 +654,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           </div>
           {marksDisplay && (
             <span
-              contentEditable
+              contentEditable={isEditingText}
+                    data-editable-field="true"
               suppressContentEditableWarning
               onBlur={handleMarksBlur}
               style={{ fontWeight: 700, fontFamily: 'monospace', flexShrink: 0, whiteSpace: 'nowrap', marginInlineStart: '6px' }}
@@ -628,7 +675,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           >
             {qNumberDisplay ? (
               <span
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={handleNumberBlur}
                 style={{ fontWeight: 700 }}
@@ -638,7 +686,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               </span>
             ) : null}
             <span
-              contentEditable
+              contentEditable={isEditingText}
+                    data-editable-field="true"
               suppressContentEditableWarning
               onBlur={(e) => {
                 const text = e.currentTarget.innerText.trim();
@@ -659,7 +708,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
 
           {/* Passage Reading Paragraph (Clean normal text paragraph, no box/background) */}
           <div
-            contentEditable
+            contentEditable={isEditingText}
+                    data-editable-field="true"
             suppressContentEditableWarning
             onBlur={handleStemBlur}
             style={{
@@ -690,7 +740,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             >
               {qNumberDisplay ? (
                 <span
-                  contentEditable
+                  contentEditable={isEditingText}
+                    data-editable-field="true"
                   suppressContentEditableWarning
                   onBlur={handleNumberBlur}
                   style={{ fontWeight: 700, flexShrink: 0 }}
@@ -703,7 +754,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
 
               {/* Topic 1 Title — Bold */}
               <div
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={(e) => handleParagraphPartBlur('t1Topic', e)}
                 style={{ fontWeight: 700, flex: 1, textAlign: isRTL ? 'right' : 'left' }}
@@ -717,7 +769,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             {/* Marks Badge (positioned directly beside the topic prompt) */}
             {marksDisplay ? (
               <span
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={handleMarksBlur}
                 style={{ fontWeight: 700, fontFamily: 'monospace', flexShrink: 0, whiteSpace: 'nowrap', marginInlineStart: '6px' }}
@@ -735,7 +788,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               {parsedParagraph.t1Questions.map((qText, qIdx) => (
                 <div
                   key={qIdx}
-                  contentEditable
+                  contentEditable={isEditingText}
+                    data-editable-field="true"
                   suppressContentEditableWarning
                   onBlur={(e) => handleParagraphQuestionBlur('t1', qIdx, e)}
                   style={{ fontWeight: 400, textAlign: isRTL ? 'right' : 'left', width: '100%', lineHeight: 'inherit' }}
@@ -752,7 +806,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           {parsedParagraph.hasOrOption && (
             <div className="mt-2 space-y-1">
               <div
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={(e) => handleParagraphPartBlur('orText', e)}
                 style={{ textAlign: 'center', fontWeight: 700, margin: '6px 0 3px 0' }}
@@ -764,7 +819,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
 
               {/* Topic 2 Title — Bold, Full width! */}
               <div
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={(e) => handleParagraphPartBlur('t2Topic', e)}
                 style={{ fontWeight: 700, textAlign: isRTL ? 'right' : 'left', width: '100%' }}
@@ -780,7 +836,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                   {parsedParagraph.t2Questions.map((qText, qIdx) => (
                     <div
                       key={qIdx}
-                      contentEditable
+                      contentEditable={isEditingText}
+                    data-editable-field="true"
                       suppressContentEditableWarning
                       onBlur={(e) => handleParagraphQuestionBlur('t2', qIdx, e)}
                       style={{ fontWeight: 400, textAlign: isRTL ? 'right' : 'left', width: '100%', lineHeight: 'inherit' }}
@@ -815,7 +872,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             >
               {qNumberDisplay ? (
                 <span
-                  contentEditable
+                  contentEditable={isEditingText}
+                    data-editable-field="true"
                   suppressContentEditableWarning
                   onBlur={handleNumberBlur}
                   style={{ fontWeight: 700, flexShrink: 0 }}
@@ -829,7 +887,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               {/* Question Stem Text — Direct ContentEditable */}
               {parsedMultiLine ? (
                 <div
-                  contentEditable
+                  contentEditable={isEditingText}
+                    data-editable-field="true"
                   suppressContentEditableWarning
                   onBlur={handleMultiLineTitleBlur}
                   style={{
@@ -844,7 +903,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                 </div>
               ) : (
                 <div
-                  contentEditable
+                  contentEditable={isEditingText}
+                    data-editable-field="true"
                   suppressContentEditableWarning
                   onBlur={handleStemBlur}
                   style={{
@@ -864,7 +924,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             {/* Marks Badge (e.g. [১], [١٠], or ২×৪= ٨) — Direct ContentEditable */}
             {marksDisplay ? (
               <span
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={handleMarksBlur}
                 style={{ fontWeight: 700, fontFamily: 'monospace', flexShrink: 0, whiteSpace: 'nowrap', marginInlineStart: '6px' }}
@@ -882,7 +943,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           {/* If parsedMultiLine has body text, render it with NORMAL FONT WEIGHT (400) */}
           {parsedMultiLine && parsedMultiLine.bodyText && (
             <div
-              contentEditable
+              contentEditable={isEditingText}
+                    data-editable-field="true"
               suppressContentEditableWarning
               onBlur={handleMultiLineBodyBlur}
               style={{
@@ -913,7 +975,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                 {sIdx === 0 ? 'i.' : sIdx === 1 ? 'ii.' : 'iii.'}
               </span>
               <span
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={(e) => {
                   const updated = [...(question.statements || [])];
@@ -958,7 +1021,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
 
               {/* Option Text — Direct ContentEditable */}
               <span
-                contentEditable
+                contentEditable={isEditingText}
+                    data-editable-field="true"
                 suppressContentEditableWarning
                 onBlur={(e) => handleOptionBlur(optIdx, e)}
                 className="outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded ps-0 pe-1 transition-colors cursor-text flex-1"
@@ -992,7 +1056,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               >
                 <div className="flex items-start gap-1 flex-1 min-w-0 w-full">
                   <span
-                    contentEditable
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
                     suppressContentEditableWarning
                     onBlur={(e) => {
                       const text = e.currentTarget.innerText.trim().replace(/[()]/g, '');
@@ -1009,7 +1074,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                     ({displayPart})
                   </span>
                   <span
-                    contentEditable
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
                     suppressContentEditableWarning
                     onBlur={(e) => handleCqPartBlur(sIdx, e)}
                     style={{ textAlign: isParagraphSub ? 'justify' : (isRTL ? 'right' : 'left'), width: '100%' }}
@@ -1048,7 +1114,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                     (col) => (
                       <td
                         key={col}
-                        contentEditable
+                        contentEditable={isEditingText}
+                    data-editable-field="true"
                         suppressContentEditableWarning
                         onBlur={(e) => handleTahqeeqCellBlur(rIdx, col, e)}
                         className={`border border-slate-400 px-1.5 py-0.5 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 cursor-text ${
@@ -1088,7 +1155,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               {question.matchingColumns.colA.map((item, mIdx) => (
                 <tr key={mIdx}>
                   <td
-                    contentEditable
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
                     suppressContentEditableWarning
                     onBlur={(e) => {
                       const updatedColA = [...(question.matchingColumns?.colA || [])];
@@ -1106,7 +1174,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                     ({mIdx + 1}) <MultiScriptText text={item} />
                   </td>
                   <td
-                    contentEditable
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
                     suppressContentEditableWarning
                     onBlur={(e) => {
                       const updatedColB = [...(question.matchingColumns?.colB || [])];
