@@ -50,6 +50,29 @@ import {
   TarjamaInshaModal,
   extractTarjamaInshaGroups,
 } from '../../components/create/arabic2nd/TarjamaInshaModal';
+import { isAlimArabic2ndPaper } from '../../components/create/arabic2nd/alimArabic2ndDefaults';
+import {
+  AlimArabic2ndQawaidModal,
+  extractAlimAr2QawaidGroups,
+} from '../../components/create/arabic2nd/AlimArabic2ndQawaidModal';
+import {
+  AlimArabic2ndTarjamaInshaModal,
+  extractAlimAr2TarjamaInshaGroups,
+} from '../../components/create/arabic2nd/AlimArabic2ndTarjamaInshaModal';
+import {
+  getAlimQuranInstructions,
+  getDakhilQuranInstructions,
+  isAlimQuranPaper,
+  isDakhilQuranTajweed,
+} from '../../components/create/quranTajweed/quranTajweedDefaults';
+import {
+  DAKHIL_QURAN_WRITTEN_GROUP_ID,
+  QuranTajweedWrittenModal,
+} from '../../components/create/quranTajweed/QuranTajweedWrittenModal';
+import {
+  ALIM_QURAN_GROUP_ID,
+  AlimQuranBuilderModal,
+} from '../../components/create/quranTajweed/AlimQuranBuilderModal';
 import {
   BanglaMcqBuilderModal,
   extractBanglaMcqGroups,
@@ -80,6 +103,21 @@ import {
   Bangla2ndHscNirmitiModal,
   extractBangla2ndHscNirmitiGroups,
 } from '../../components/create/bangla2nd/Bangla2ndHscNirmitiModal';
+import {
+  getAlimFiqhInstructions,
+  getAqaidFiqhInstructions,
+  isAlimFiqh2nd,
+  isAlimFiqhPaper,
+  isDakhilAqaidFiqh,
+} from '../../components/create/aqaidFiqh/aqaidFiqhDefaults';
+import {
+  AqaidFiqhWrittenModal,
+  extractAqaidFiqhWrittenGroups,
+} from '../../components/create/aqaidFiqh/AqaidFiqhWrittenModal';
+import {
+  AlimFiqhBuilderModal,
+  extractAlimFiqhGroups,
+} from '../../components/create/aqaidFiqh/AlimFiqhBuilderModal';
 import { SetShufflerModal } from '../../components/builder/SetShufflerModal';
 import { DownloadModal, DeliverableType } from '../../components/builder/DownloadModal';
 import { PaperSettingsModal } from '../../components/builder/PaperSettingsModal';
@@ -205,6 +243,16 @@ export default function CreateQuestionPage() {
   const [activeBangla2ndHscGrammarGroupId, setActiveBangla2ndHscGrammarGroupId] = useState<string | null>(null);
   const [isBangla2ndHscNirmitiModalOpen, setIsBangla2ndHscNirmitiModalOpen] = useState(false);
   const [activeBangla2ndHscNirmitiGroupId, setActiveBangla2ndHscNirmitiGroupId] = useState<string | null>(null);
+  const [isAqaidFiqhWrittenModalOpen, setIsAqaidFiqhWrittenModalOpen] = useState(false);
+  const [activeAqaidFiqhWrittenGroupId, setActiveAqaidFiqhWrittenGroupId] = useState<string | null>(null);
+  const [isAlimFiqhModalOpen, setIsAlimFiqhModalOpen] = useState(false);
+  const [activeAlimFiqhGroupId, setActiveAlimFiqhGroupId] = useState<string | null>(null);
+  const [isAlimAr2QawaidModalOpen, setIsAlimAr2QawaidModalOpen] = useState(false);
+  const [activeAlimAr2QawaidGroupId, setActiveAlimAr2QawaidGroupId] = useState<string | null>(null);
+  const [isAlimAr2TarjamaModalOpen, setIsAlimAr2TarjamaModalOpen] = useState(false);
+  const [activeAlimAr2TarjamaGroupId, setActiveAlimAr2TarjamaGroupId] = useState<string | null>(null);
+  const [isDakhilQuranWrittenModalOpen, setIsDakhilQuranWrittenModalOpen] = useState(false);
+  const [isAlimQuranModalOpen, setIsAlimQuranModalOpen] = useState(false);
   const [isPaperSettingsModalOpen, setIsPaperSettingsModalOpen] = useState(false);
   const autoFitFnRef = useRef<((targetPages?: number) => void) | null>(null);
 
@@ -222,6 +270,28 @@ export default function CreateQuestionPage() {
   const bangla2ndSscWrittenGroups = useMemo(() => extractBangla2ndSscWrittenGroups(questions), [questions]);
   const bangla2ndHscGrammarGroups = useMemo(() => extractBangla2ndHscGrammarGroups(questions), [questions]);
   const bangla2ndHscNirmitiGroups = useMemo(() => extractBangla2ndHscNirmitiGroups(questions), [questions]);
+  const aqaidFiqhWrittenGroups = useMemo(() => extractAqaidFiqhWrittenGroups(questions), [questions]);
+  const alimFiqhGroups = useMemo(() => extractAlimFiqhGroups(questions), [questions]);
+  const alimAr2QawaidGroups = useMemo(() => extractAlimAr2QawaidGroups(questions), [questions]);
+  const alimAr2TarjamaGroups = useMemo(() => extractAlimAr2TarjamaInshaGroups(questions), [questions]);
+  const dakhilQuranWrittenCount = useMemo(
+    () =>
+      questions.filter(
+        (q) =>
+          q.groupId === DAKHIL_QURAN_WRITTEN_GROUP_ID &&
+          (q.groupRole === 'quran_ayat_item' || q.groupRole === 'quran_short_item')
+      ).length,
+    [questions]
+  );
+  const alimQuranCount = useMemo(
+    () =>
+      questions.filter(
+        (q) =>
+          q.groupId === ALIM_QURAN_GROUP_ID &&
+          (q.groupRole === 'alim_quran_group_a_item' || q.groupRole === 'alim_quran_group_b_item')
+      ).length,
+    [questions]
+  );
 
   const handleOpenNasrulModal = useCallback(
     (specificQuestion?: QuestionData) => {
@@ -424,6 +494,76 @@ export default function CreateQuestionPage() {
     [bangla2ndHscNirmitiGroups]
   );
 
+  const handleOpenAqaidFiqhWrittenModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = aqaidFiqhWrittenGroups.find(
+          (g) => g.groupId === specificQuestion.groupId
+        );
+        setActiveAqaidFiqhWrittenGroupId(
+          matched ? matched.groupId : aqaidFiqhWrittenGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveAqaidFiqhWrittenGroupId(
+          aqaidFiqhWrittenGroups[0]?.groupId ?? null
+        );
+      }
+      setIsAqaidFiqhWrittenModalOpen(true);
+    },
+    [aqaidFiqhWrittenGroups]
+  );
+
+  const handleOpenAlimFiqhModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = alimFiqhGroups.find(
+          (g) => g.groupId === specificQuestion.groupId
+        );
+        setActiveAlimFiqhGroupId(
+          matched ? matched.groupId : alimFiqhGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveAlimFiqhGroupId(alimFiqhGroups[0]?.groupId ?? null);
+      }
+      setIsAlimFiqhModalOpen(true);
+    },
+    [alimFiqhGroups]
+  );
+
+  const handleOpenAlimAr2QawaidModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = alimAr2QawaidGroups.find(
+          (g) => g.groupId === specificQuestion.groupId
+        );
+        setActiveAlimAr2QawaidGroupId(
+          matched ? matched.groupId : alimAr2QawaidGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveAlimAr2QawaidGroupId(alimAr2QawaidGroups[0]?.groupId ?? null);
+      }
+      setIsAlimAr2QawaidModalOpen(true);
+    },
+    [alimAr2QawaidGroups]
+  );
+
+  const handleOpenAlimAr2TarjamaModal = useCallback(
+    (specificQuestion?: QuestionData) => {
+      if (specificQuestion) {
+        const matched = alimAr2TarjamaGroups.find(
+          (g) => g.groupId === specificQuestion.groupId
+        );
+        setActiveAlimAr2TarjamaGroupId(
+          matched ? matched.groupId : alimAr2TarjamaGroups[0]?.groupId ?? null
+        );
+      } else {
+        setActiveAlimAr2TarjamaGroupId(alimAr2TarjamaGroups[0]?.groupId ?? null);
+      }
+      setIsAlimAr2TarjamaModalOpen(true);
+    },
+    [alimAr2TarjamaGroups]
+  );
+
   // Status message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -528,8 +668,13 @@ export default function CreateQuestionPage() {
       config.subject.includes('আরবি ২য়') ||
       config.subject.includes('আরবি দ্বিতীয়') ||
       config.subject.includes('قواعد اللغة العربية') ||
+      config.subject.includes('الورقة الثانية') ||
+      config.subject.includes('الأدب العربي') ||
       config.subject.includes('কাওয়াইদুল') ||
-      config.subjectCode === '১৩৪';
+      config.subjectCode === '১৩৪' ||
+      config.subjectCode === '২০৬';
+
+    const isAlimAr2 = isAlimArabic2ndPaper(config.subject, config.subjectCode, config.grade);
 
     const isArabic1st =
       !isArabic2nd &&
@@ -539,6 +684,53 @@ export default function CreateQuestionPage() {
         config.subjectCode === '১৩৩');
 
     const hasBengali = (str?: string) => Boolean(str && /[\u0980-\u09FF]/.test(str));
+
+    // Handle Alim Arabic 2nd Paper (Code 206) Empty Paper with Arabic Header
+    if (isAlimAr2) {
+      loadFullPaper({
+        headerConfig: {
+          institutionName:
+            !config.institutionName || hasBengali(config.institutionName)
+              ? 'بهيربهيري عالم مدرسة - تاكورغاو'
+              : config.institutionName,
+          examTitle:
+            !config.examTitle || hasBengali(config.examTitle)
+              ? 'امتحان العالم - ٢٠٢٦'
+              : config.examTitle,
+          grade:
+            !config.grade || hasBengali(config.grade)
+              ? config.grade?.includes('১ম')
+                ? 'الصف الأول من العالم'
+                : 'الصف الثاني من العالم'
+              : config.grade,
+          subject: 'الأدب العربي - الورقة الثانية (القواعد والترجمة والإنشاء)',
+          subjectCode: '২০৬',
+          timeAllowed:
+            !config.timeAllowed || hasBengali(config.timeAllowed)
+              ? 'ثلاث ساعات'
+              : config.timeAllowed,
+          totalMarks: 100,
+          headerSize: 'compact',
+          bismillahText: undefined,
+          educationStream: 'ALIA',
+          headerPreset: 'ALIA',
+          generalInstructions: [],
+        },
+        layoutConfig: {
+          columns: 1,
+          numberingFormat: 'ar',
+          fontSize: 'standard',
+          paperSize: 'A4',
+          arabicFont: 'Traditional Arabic',
+        },
+        sections: [],
+        questions: [],
+      });
+
+      setActiveTab('insert');
+      showToast('আলিম আরবি ২য় পত্র (الأدب العربي - الورقة الثانية : কোড ২০৬) প্রস্তুত হয়েছে! ইনসার্ট মেনু থেকে প্রশ্ন যোগ করুন।');
+      return;
+    }
 
     // Handle Arabic 2nd Paper (Dakhil 10th / 9th) Empty Paper with Arabic Header
     if (isArabic2nd) {
@@ -638,14 +830,129 @@ export default function CreateQuestionPage() {
     applyHeaderPreset(preset);
 
     const isBangla2nd = isBangla2ndPaper(config.subject, config.subjectCode);
-    const isBangla1st = !isBangla2nd && isBangla1stPaper(config.subject, config.subjectCode);
-    const banglaModeInfo = isBangla1st
+    const isAlimQuran = isAlimQuranPaper(config.subject, config.subjectCode, config.grade);
+    const isDakhilQuran = isDakhilQuranTajweed(config.subject, config.subjectCode, config.grade);
+    const isBangla1st =
+      !isBangla2nd &&
+      !isDakhilQuran &&
+      !isAlimQuran &&
+      isBangla1stPaper(config.subject, config.subjectCode);
+    const isAqaidFiqh = isDakhilAqaidFiqh(config.subject, config.subjectCode);
+    const isAlimFiqh = isAlimFiqhPaper(config.subject, config.subjectCode);
+    const banglaModeInfo = isDakhilQuran
+      ? getDakhilQuranInstructions(config.banglaPaperMode || 'COMBINED_100')
+      : isAlimQuran
+      ? getAlimQuranInstructions()
+      : isBangla1st
       ? getBanglaInstructionsByMode(config.banglaPaperMode || 'COMBINED_100', config.grade)
       : isBangla2nd
       ? getBangla2ndInstructions(config.banglaPaperMode || 'COMBINED_100', config.grade)
+      : isAqaidFiqh
+      ? getAqaidFiqhInstructions(config.banglaPaperMode || 'COMBINED_100')
+      : isAlimFiqh
+      ? getAlimFiqhInstructions(isAlimFiqh2nd(config.subject, config.subjectCode))
       : null;
 
-    const isHscAlimB2 = isBangla2nd && isHscOrAlimGrade(config.grade);
+    const isSingleColPaper =
+      (isBangla2nd && isHscOrAlimGrade(config.grade)) || isAlimFiqh || isAlimQuran;
+
+    if (isAlimQuran) {
+      const alimQuranMeta = getAlimQuranInstructions();
+      loadFullPaper({
+        headerConfig: {
+          institutionName:
+            !config.institutionName || hasBengali(config.institutionName)
+              ? 'بهيربهيري عالم مدرسة - تاكورغاو'
+              : config.institutionName,
+          examTitle:
+            !config.examTitle || hasBengali(config.examTitle)
+              ? 'امتحان العالم - ٢٠٢٦'
+              : config.examTitle,
+          grade:
+            !config.grade || hasBengali(config.grade)
+              ? config.grade?.includes('২য়') || config.grade?.includes('২য়')
+                ? 'الصف الثاني من العالم'
+                : 'الصف الأول من العالم'
+              : config.grade,
+          subject: 'القرآن المجيد',
+          subjectCode: '২০১',
+          timeAllowed:
+            !config.timeAllowed || hasBengali(config.timeAllowed)
+              ? 'ثلاث ساعات'
+              : config.timeAllowed,
+          totalMarks: 100,
+          headerSize: 'compact',
+          bismillahText: undefined,
+          educationStream: 'ALIA',
+          headerPreset: 'ALIA',
+          generalInstructions: alimQuranMeta.generalInstructions,
+        },
+        layoutConfig: {
+          columns: 1,
+          numberingFormat: 'ar',
+          fontSize: 'standard',
+          paperSize: 'A4',
+          arabicFont: 'Traditional Arabic',
+        },
+        sections: [],
+        questions: [],
+      });
+
+      setActiveTab('insert');
+      showToast('আলিম আল কুরআন মাজিদ (القرآن المجيد : কোড ২০১) প্রস্তুত হয়েছে! ইনসার্ট মেনু থেকে প্রশ্ন যোগ করুন।');
+      return;
+    }
+
+    if (isAlimFiqh) {
+      const is2ndFiqh = isAlimFiqh2nd(config.subject, config.subjectCode);
+      loadFullPaper({
+        headerConfig: {
+          institutionName:
+            !config.institutionName || hasBengali(config.institutionName)
+              ? 'بهيربهيري عالم مدرسة - تاكورغاو'
+              : config.institutionName,
+          examTitle:
+            !config.examTitle || hasBengali(config.examTitle)
+              ? 'الإمتحان السنوي للعالم - ٢٠٢٦'
+              : config.examTitle,
+          grade:
+            !config.grade || hasBengali(config.grade)
+              ? config.grade?.includes('২য়') || config.grade?.includes('২য়')
+                ? 'الصف الثاني من العالم'
+                : 'الصف الأول من العالم'
+              : config.grade,
+          subject: is2ndFiqh ? 'الفقه الثاني' : 'الفقه الأول',
+          subjectCode: is2ndFiqh ? '২০৪' : '২০৩',
+          timeAllowed:
+            !config.timeAllowed || hasBengali(config.timeAllowed)
+              ? 'ثلاث ساعات'
+              : config.timeAllowed,
+          totalMarks: 100,
+          headerSize: 'compact',
+          bismillahText: undefined,
+          educationStream: 'ALIA',
+          headerPreset: 'ALIA',
+          generalInstructions: [],
+        },
+        layoutConfig: {
+          columns: 1,
+          numberingFormat: 'ar',
+          fontSize: 'standard',
+          paperSize: 'A4',
+          arabicFont: 'Traditional Arabic',
+        },
+        sections: [],
+        questions: [],
+      });
+
+      setActiveTab('insert');
+      showToast(
+        is2ndFiqh
+          ? 'আল ফিকহ ২য় পত্র (الفقه الثاني) এর আরবি হেডার প্রস্তুত হয়েছে! ইনসার্ট মেনু থেকে প্রশ্ন যোগ করুন।'
+          : 'আল ফিকহ ১ম পত্র (الفقه الأول) এর আরবি হেডার প্রস্তুত হয়েছে! ইনসার্ট মেনু থেকে প্রশ্ন যোগ করুন।'
+      );
+      return;
+    }
 
     loadFullPaper({
       headerConfig: {
@@ -662,13 +969,19 @@ export default function CreateQuestionPage() {
             ? config.stream === 'ALIA'
               ? '১৩৬'
               : '১০২'
+            : isAqaidFiqh
+            ? '১০৩'
+            : isAlimFiqh
+            ? isAlimFiqh2nd(config.subject, config.subjectCode)
+              ? '২০৪'
+              : '২০৩'
             : undefined),
         grade: config.grade,
         timeAllowed: config.timeAllowed || banglaModeInfo?.timeAllowed || '৩ ঘণ্টা',
         totalMarks: config.totalMarks || banglaModeInfo?.totalMarks || 100,
         educationStream: config.stream,
         bismillahText: undefined,
-        headerSize: isBangla1st || isBangla2nd ? 'compact' : 'standard',
+        headerSize: isBangla1st || isBangla2nd || isAqaidFiqh || isAlimFiqh ? 'compact' : 'standard',
         generalInstructions: banglaModeInfo
           ? banglaModeInfo.generalInstructions
           : [
@@ -677,7 +990,7 @@ export default function CreateQuestionPage() {
             ],
       },
       layoutConfig: {
-        columns: isHscAlimB2 ? 1 : 2,
+        columns: isSingleColPaper ? 1 : 2,
         numberingFormat: 'bn',
         fontSize: 'standard',
       },
@@ -1475,6 +1788,18 @@ export default function CreateQuestionPage() {
 </html>`;
   };
 
+  const triggerPdfBlobDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), {
+      href: url,
+      download: filename,
+    });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   // PDF Deliverable Download
   const handleDownloadPdf = async (type: 'question-paper' | 'answer-key' | 'omr-sheet') => {
     if (questions.length === 0) {
@@ -1490,19 +1815,11 @@ export default function CreateQuestionPage() {
         renderedHtml = buildClientRenderedHtml();
       }
       const blob = await downloadPdfDeliverable(type, getPaperData(), activeSet, undefined, renderedHtml);
-      const url = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement('a'), {
-        href: url,
-        download: `${type}_${activeSet || 'SetA'}.pdf`,
-      });
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      triggerPdfBlobDownload(blob, `${type}_${activeSet || 'SetA'}.pdf`);
       showToast('PDF সফলভাবে ডাউনলোড হয়েছে!');
     } catch (err: any) {
       setErrorMessage(err.message || 'PDF ডাউনলোড করতে ব্যর্থ হয়েছে।');
-      setTimeout(() => setErrorMessage(null), 5000);
+      setTimeout(() => setErrorMessage(null), 6000);
     }
   };
 
@@ -1593,6 +1910,18 @@ export default function CreateQuestionPage() {
         bangla2ndHscGrammarCount={bangla2ndHscGrammarGroups.length}
         onOpenBangla2ndHscNirmitiModal={() => handleOpenBangla2ndHscNirmitiModal()}
         bangla2ndHscNirmitiCount={bangla2ndHscNirmitiGroups.length}
+        onOpenAqaidFiqhWrittenModal={() => handleOpenAqaidFiqhWrittenModal()}
+        aqaidFiqhWrittenCount={aqaidFiqhWrittenGroups.length}
+        onOpenAlimFiqhModal={() => handleOpenAlimFiqhModal()}
+        alimFiqhCount={alimFiqhGroups.length}
+        onOpenAlimAr2QawaidModal={() => handleOpenAlimAr2QawaidModal()}
+        alimAr2QawaidCount={alimAr2QawaidGroups.length}
+        onOpenAlimAr2TarjamaModal={() => handleOpenAlimAr2TarjamaModal()}
+        alimAr2TarjamaCount={alimAr2TarjamaGroups.length}
+        onOpenDakhilQuranWrittenModal={() => setIsDakhilQuranWrittenModalOpen(true)}
+        dakhilQuranWrittenCount={dakhilQuranWrittenCount}
+        onOpenAlimQuranModal={() => setIsAlimQuranModalOpen(true)}
+        alimQuranCount={alimQuranCount}
         onOpenSettingsModal={() => setIsPaperSettingsModalOpen(true)}
         onAutoRenumber={handleAutoRenumber}
         onStripAllHarakat={handleStripAllHarakat}
@@ -1650,6 +1979,18 @@ export default function CreateQuestionPage() {
               handleOpenBangla2ndHscGrammarModal(q);
             } else if (q.groupId && q.groupId.startsWith('bangla2nd-hsc-nirmiti')) {
               handleOpenBangla2ndHscNirmitiModal(q);
+            } else if (q.groupId && q.groupId.startsWith('aqaid-fiqh-written')) {
+              handleOpenAqaidFiqhWrittenModal(q);
+            } else if (q.groupId && q.groupId.startsWith('alim-fiqh-section')) {
+              handleOpenAlimFiqhModal(q);
+            } else if (q.groupId && q.groupId.startsWith('alim-ar2-qawaid')) {
+              handleOpenAlimAr2QawaidModal(q);
+            } else if (q.groupId && q.groupId.startsWith('alim-ar2-tarjama')) {
+              handleOpenAlimAr2TarjamaModal(q);
+            } else if (q.groupId === DAKHIL_QURAN_WRITTEN_GROUP_ID) {
+              setIsDakhilQuranWrittenModalOpen(true);
+            } else if (q.groupId === ALIM_QURAN_GROUP_ID) {
+              setIsAlimQuranModalOpen(true);
             } else {
               handleOpenNasrulModal(q);
             }
@@ -1708,6 +2049,12 @@ export default function CreateQuestionPage() {
                   else if (q.groupId?.startsWith('bangla2nd-ssc-written')) handleOpenBangla2ndSscWrittenModal(q);
                   else if (q.groupId?.startsWith('bangla2nd-hsc-grammar')) handleOpenBangla2ndHscGrammarModal(q);
                   else if (q.groupId?.startsWith('bangla2nd-hsc-nirmiti')) handleOpenBangla2ndHscNirmitiModal(q);
+                  else if (q.groupId?.startsWith('aqaid-fiqh-written')) handleOpenAqaidFiqhWrittenModal(q);
+                  else if (q.groupId?.startsWith('alim-fiqh-section')) handleOpenAlimFiqhModal(q);
+                  else if (q.groupId?.startsWith('alim-ar2-qawaid')) handleOpenAlimAr2QawaidModal(q);
+                  else if (q.groupId?.startsWith('alim-ar2-tarjama')) handleOpenAlimAr2TarjamaModal(q);
+                  else if (q.groupId === DAKHIL_QURAN_WRITTEN_GROUP_ID) setIsDakhilQuranWrittenModalOpen(true);
+                  else if (q.groupId === ALIM_QURAN_GROUP_ID) setIsAlimQuranModalOpen(true);
                   else handleOpenNasrulModal(q);
                 }
               : undefined
@@ -1760,6 +2107,18 @@ export default function CreateQuestionPage() {
           bangla2ndHscGrammarCount={bangla2ndHscGrammarGroups.length}
           onOpenBangla2ndHscNirmitiModal={() => handleOpenBangla2ndHscNirmitiModal()}
           bangla2ndHscNirmitiCount={bangla2ndHscNirmitiGroups.length}
+          onOpenAqaidFiqhWrittenModal={() => handleOpenAqaidFiqhWrittenModal()}
+          aqaidFiqhWrittenCount={aqaidFiqhWrittenGroups.length}
+          onOpenAlimFiqhModal={() => handleOpenAlimFiqhModal()}
+          alimFiqhCount={alimFiqhGroups.length}
+          onOpenAlimAr2QawaidModal={() => handleOpenAlimAr2QawaidModal()}
+          alimAr2QawaidCount={alimAr2QawaidGroups.length}
+          onOpenAlimAr2TarjamaModal={() => handleOpenAlimAr2TarjamaModal()}
+          alimAr2TarjamaCount={alimAr2TarjamaGroups.length}
+          onOpenDakhilQuranWrittenModal={() => setIsDakhilQuranWrittenModalOpen(true)}
+          dakhilQuranWrittenCount={dakhilQuranWrittenCount}
+          onOpenAlimQuranModal={() => setIsAlimQuranModalOpen(true)}
+          alimQuranCount={alimQuranCount}
           openInsertTrigger={mobileInsertTrigger}
         />
       )}
@@ -1929,17 +2288,18 @@ export default function CreateQuestionPage() {
         }}
       />
 
-      {/* ───────────────── IKHTIBARUL QAWAID BUILDER MODAL (Arabic 2nd Paper Q3) ───────────────── */}
+      {/* ───────────────── IKHTIBARUL QAWAID BUILDER MODAL (Dakhil Q3 / Alim Q11) ───────────────── */}
       <IkhtibarulQawaidModal
         isOpen={isIkhtibarModalOpen}
         onClose={() => setIsIkhtibarModalOpen(false)}
+        isAlim={isAlimArabic2ndPaper(headerConfig.subject, headerConfig.subjectCode, headerConfig.grade)}
         allGroups={ikhtibarGroups}
         activeGroupId={activeIkhtibarGroupId}
         onSelectGroupId={setActiveIkhtibarGroupId}
         onSave={(newQs, mode, targetGroupId, proceedToInsha) => {
           if (mode === 'update') {
             replaceQuestionGroup(targetGroupId, newQs);
-            showToast('কাওয়ায়েদ পরীক্ষা (৩ নং প্রশ্ন) সফলভাবে আপডেট হয়েছে!');
+            showToast('কাওয়ায়েদ পরীক্ষা সফলভাবে আপডেট হয়েছে!');
           } else {
             if (sections.length > 0) {
               newQs.forEach((q) => {
@@ -1947,10 +2307,14 @@ export default function CreateQuestionPage() {
               });
             }
             addQuestions(newQs);
-            showToast('কাওয়ায়েদ পরীক্ষা (৩ নং প্রশ্ন - ২০/২৫ নম্বর) পেপারে যুক্ত হয়েছে!');
+            showToast('কাওয়ায়েদ পরীক্ষা (اختبار القواعد) পেপারে যুক্ত হয়েছে!');
           }
           if (proceedToInsha) {
-            handleOpenTarjamaInshaModal();
+            if (isAlimArabic2ndPaper(headerConfig.subject, headerConfig.subjectCode, headerConfig.grade)) {
+              handleOpenAlimAr2TarjamaModal();
+            } else {
+              handleOpenTarjamaInshaModal();
+            }
           }
         }}
       />
@@ -1978,16 +2342,25 @@ export default function CreateQuestionPage() {
         }}
       />
 
-      {/* ───────────────── BANGLA 1ST PAPER MCQ BUILDER MODAL (30 Marks) ───────────────── */}
+      {/* ───────────────── BANGLA 1ST, 2ND, AQAID & QURAN MCQ BUILDER MODAL (30 / 40 Marks) ───────────────── */}
       <BanglaMcqBuilderModal
         isOpen={isBanglaMcqModalOpen}
         onClose={() => setIsBanglaMcqModalOpen(false)}
         grade={headerConfig.grade || '১০ম শ্রেণি'}
         subject={headerConfig.subject || 'বাংলা ১ম পত্র'}
+        targetMarks={
+          isDakhilAqaidFiqh(headerConfig.subject, headerConfig.subjectCode) ||
+          isDakhilQuranTajweed(headerConfig.subject, headerConfig.subjectCode, headerConfig.grade)
+            ? 40
+            : 30
+        }
         allGroups={banglaMcqGroups}
         activeGroupId={activeBanglaMcqGroupId}
         onSelectGroupId={setActiveBanglaMcqGroupId}
         onSave={(newQs, mode, targetGroupId, proceedToCq) => {
+          const isFortyMcq =
+            isDakhilAqaidFiqh(headerConfig.subject, headerConfig.subjectCode) ||
+            isDakhilQuranTajweed(headerConfig.subject, headerConfig.subjectCode, headerConfig.grade);
           if (mode === 'update') {
             replaceQuestionGroup(targetGroupId, newQs);
             showToast('বহুনির্বাচনি (MCQ) অংশ সফলভাবে আপডেট হয়েছে!');
@@ -1998,10 +2371,18 @@ export default function CreateQuestionPage() {
               });
             }
             addQuestions(newQs);
-            showToast('বহুনির্বাচনি অভীক্ষা (MCQ - ৩০ নম্বর) পেপারে যুক্ত হয়েছে!');
+            showToast(
+              isFortyMcq
+                ? 'বহুনির্বাচনি অভীক্ষা (MCQ - ৪০ নম্বর) পেপারে যুক্ত হয়েছে!'
+                : 'বহুনির্বাচনি অভীক্ষা (MCQ - ৩০ নম্বর) পেপারে যুক্ত হয়েছে!'
+            );
           }
           if (proceedToCq) {
-            if (isBangla2ndPaper(headerConfig.subject, headerConfig.subjectCode)) {
+            if (isDakhilQuranTajweed(headerConfig.subject, headerConfig.subjectCode, headerConfig.grade)) {
+              setIsDakhilQuranWrittenModalOpen(true);
+            } else if (isDakhilAqaidFiqh(headerConfig.subject, headerConfig.subjectCode)) {
+              handleOpenAqaidFiqhWrittenModal();
+            } else if (isBangla2ndPaper(headerConfig.subject, headerConfig.subjectCode)) {
               handleOpenBangla2ndSscWrittenModal();
             } else {
               handleOpenBanglaCqModal();
@@ -2113,6 +2494,154 @@ export default function CreateQuestionPage() {
         }}
       />
 
+      {/* ───────────────── DAKHIL AQAID & FIQH WRITTEN BUILDER MODAL (60 Marks) ───────────────── */}
+      <AqaidFiqhWrittenModal
+        isOpen={isAqaidFiqhWrittenModalOpen}
+        onClose={() => setIsAqaidFiqhWrittenModalOpen(false)}
+        grade={headerConfig.grade || 'দাখিল ১০ম শ্রেণি'}
+        subject={headerConfig.subject || 'আকাইদ ও ফিকহ'}
+        allGroups={aqaidFiqhWrittenGroups}
+        activeGroupId={activeAqaidFiqhWrittenGroupId}
+        onSelectGroupId={setActiveAqaidFiqhWrittenGroupId}
+        onSave={(newQs, mode, targetGroupId) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('আকাইদ ও ফিকহ রচনামূলক (খ–চ বিভাগ) সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('আকাইদ ও ফিকহ রচনামূলক (খ–চ বিভাগ : ৬০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+        }}
+      />
+
+      {/* ───────────────── ALIM FIQH 1ST & 2ND PAPER BUILDER MODAL (100 Marks + Optional Bengali) ───────────────── */}
+      <AlimFiqhBuilderModal
+        isOpen={isAlimFiqhModalOpen}
+        onClose={() => setIsAlimFiqhModalOpen(false)}
+        isSecondPaper={isAlimFiqh2nd(headerConfig.subject, headerConfig.subjectCode)}
+        grade={headerConfig.grade || 'আলিম ১ম বর্ষ'}
+        subject={headerConfig.subject}
+        allGroups={alimFiqhGroups}
+        activeGroupId={activeAlimFiqhGroupId}
+        onSelectGroupId={setActiveAlimFiqhGroupId}
+        onSave={(newQs, mode, targetGroupId) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('আল ফিকহ প্রশ্নাবলি সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('আল ফিকহ প্রশ্নাবলি (১০০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+        }}
+      />
+
+      {/* ───────────────── ALIM ARABIC 2ND PAPER (أ) QAWAID MODAL (Q1–Q10: 35 Marks) ───────────────── */}
+      <AlimArabic2ndQawaidModal
+        isOpen={isAlimAr2QawaidModalOpen}
+        onClose={() => setIsAlimAr2QawaidModalOpen(false)}
+        grade={headerConfig.grade || 'الصف الثاني من العالم'}
+        subject={headerConfig.subject || 'الأدب العربي (الورقة الثانية)'}
+        allGroups={alimAr2QawaidGroups}
+        activeGroupId={activeAlimAr2QawaidGroupId}
+        onSelectGroupId={setActiveAlimAr2QawaidGroupId}
+        onSave={(newQs, mode, targetGroupId, proceedToIkhtibar) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('(أ) القواعد অংশ সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('(أ) القواعد (১–১০ নং প্রশ্ন : ৩৫ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+          if (proceedToIkhtibar) {
+            handleOpenIkhtibarModal();
+          }
+        }}
+      />
+
+      {/* ───────────────── ALIM ARABIC 2ND PAPER (ج) TARJAMA & INSHA MODAL (Q12–Q16: 50 Marks) ───────────────── */}
+      <AlimArabic2ndTarjamaInshaModal
+        isOpen={isAlimAr2TarjamaModalOpen}
+        onClose={() => setIsAlimAr2TarjamaModalOpen(false)}
+        grade={headerConfig.grade || 'الصف الثاني من العالم'}
+        subject={headerConfig.subject || 'الأدب العربي (الورقة الثانية)'}
+        allGroups={alimAr2TarjamaGroups}
+        activeGroupId={activeAlimAr2TarjamaGroupId}
+        onSelectGroupId={setActiveAlimAr2TarjamaGroupId}
+        onSave={(newQs, mode, targetGroupId) => {
+          if (mode === 'update') {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('(ج) الترجمة والإنشاء অংশ সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('(ج) الترجمة والإنشاء (১২–১৬ নং প্রশ্ন : ৫০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+        }}
+      />
+
+      {/* ───────────────── DAKHIL QURAN MAJID & TAJWEED WRITTEN MODAL (খ–ঘ বিভাগ: 60 Marks) ───────────────── */}
+      <QuranTajweedWrittenModal
+        isOpen={isDakhilQuranWrittenModalOpen}
+        onClose={() => setIsDakhilQuranWrittenModalOpen(false)}
+        existingQuestions={questions}
+        onSave={(newQs) => {
+          const hasExisting = questions.some((q) => q.groupId === DAKHIL_QURAN_WRITTEN_GROUP_ID);
+          if (hasExisting) {
+            replaceQuestionGroup(DAKHIL_QURAN_WRITTEN_GROUP_ID, newQs);
+            showToast('আল কুরআন মাজিদ ও তাজবীদ রচনামূলক (খ–ঘ বিভাগ) সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('আল কুরআন মাজিদ ও তাজবীদ রচনামূলক (খ–ঘ বিভাগ : ৬০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+        }}
+      />
+
+      {/* ───────────────── ALIM QURAN MAJID ARABIC BUILDER MODAL (القرآن المجيد - 100 Marks) ───────────────── */}
+      <AlimQuranBuilderModal
+        isOpen={isAlimQuranModalOpen}
+        onClose={() => setIsAlimQuranModalOpen(false)}
+        existingQuestions={questions}
+        onSave={(newQs) => {
+          const hasExisting = questions.some((q) => q.groupId === ALIM_QURAN_GROUP_ID);
+          if (hasExisting) {
+            replaceQuestionGroup(ALIM_QURAN_GROUP_ID, newQs);
+            showToast('القرآن المجيد প্রশ্নাবলি সফলভাবে আপডেট হয়েছে!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('القرآن المجيد — مجموعة (أ) ও (ب) (১০০ নম্বর) পেপারে যুক্ত হয়েছে!');
+          }
+        }}
+      />
+
       {/* ───────────────── QUICK AI SIDE DRAWER ───────────────── */}
       <QuickAiDrawer
         isOpen={isAiDrawerOpen}
@@ -2144,14 +2673,18 @@ export default function CreateQuestionPage() {
         onDownloadSet={async (setName, type) => {
           const targetType = type || downloadDeliverableType;
           const renderedHtml = targetType === 'question-paper' ? buildClientRenderedHtml() : undefined;
-          await downloadPdfDeliverable(targetType, getPaperData(), setName, undefined, renderedHtml);
+          const blob = await downloadPdfDeliverable(targetType, getPaperData(), setName, undefined, renderedHtml);
+          triggerPdfBlobDownload(blob, `${targetType}_${setName || 'SetA'}.pdf`);
+          showToast('PDF সফলভাবে ডাউনলোড হয়েছে!');
         }}
         onDownloadAllSets={async (setNames, type) => {
           const targetType = type || downloadDeliverableType;
           const renderedHtml = targetType === 'question-paper' ? buildClientRenderedHtml() : undefined;
           for (const s of setNames) {
-            await downloadPdfDeliverable(targetType, getPaperData(), s, undefined, renderedHtml);
+            const blob = await downloadPdfDeliverable(targetType, getPaperData(), s, undefined, renderedHtml);
+            triggerPdfBlobDownload(blob, `${targetType}_${s || 'SetA'}.pdf`);
           }
+          showToast('সকল সেটের PDF সফলভাবে ডাউনলোড হয়েছে!');
         }}
         onOpenSetShuffler={() => setIsShufflerOpen(true)}
       />

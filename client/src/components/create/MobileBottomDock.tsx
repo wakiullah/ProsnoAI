@@ -82,6 +82,18 @@ interface MobileBottomDockProps {
   bangla2ndHscGrammarCount?: number;
   onOpenBangla2ndHscNirmitiModal?: () => void;
   bangla2ndHscNirmitiCount?: number;
+  onOpenAqaidFiqhWrittenModal?: () => void;
+  aqaidFiqhWrittenCount?: number;
+  onOpenAlimFiqhModal?: () => void;
+  alimFiqhCount?: number;
+  onOpenAlimAr2QawaidModal?: () => void;
+  alimAr2QawaidCount?: number;
+  onOpenAlimAr2TarjamaModal?: () => void;
+  alimAr2TarjamaCount?: number;
+  onOpenDakhilQuranWrittenModal?: () => void;
+  dakhilQuranWrittenCount?: number;
+  onOpenAlimQuranModal?: () => void;
+  alimQuranCount?: number;
   openInsertTrigger?: number;
 }
 
@@ -131,6 +143,18 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
   bangla2ndHscGrammarCount = 0,
   onOpenBangla2ndHscNirmitiModal,
   bangla2ndHscNirmitiCount = 0,
+  onOpenAqaidFiqhWrittenModal,
+  aqaidFiqhWrittenCount = 0,
+  onOpenAlimFiqhModal,
+  alimFiqhCount = 0,
+  onOpenAlimAr2QawaidModal,
+  alimAr2QawaidCount = 0,
+  onOpenAlimAr2TarjamaModal,
+  alimAr2TarjamaCount = 0,
+  onOpenDakhilQuranWrittenModal,
+  dakhilQuranWrittenCount = 0,
+  onOpenAlimQuranModal,
+  alimQuranCount = 0,
   openInsertTrigger = 0,
 }) => {
   const [activeSheet, setActiveSheet] = useState<MobileSheetTab>(null);
@@ -166,9 +190,32 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
       ((headerConfig.subjectCode || '') === '১০২' && (headerConfig.subject || '').includes('বাংলা')) ||
       ((headerConfig.subjectCode || '') === '১৩৬' && (headerConfig.subject || '').includes('বাংলা')));
 
+  const isAlimQuran = Boolean(
+    (headerConfig.subjectCode || '') === '২০১' ||
+      (headerConfig.subject || '').includes('القرآن المجيد') ||
+      (headerConfig.subject || '').includes('القران المجيد') ||
+      (((headerConfig.subject || '').includes('কুরআন') ||
+        (headerConfig.subject || '').includes('কোরআন') ||
+        (headerConfig.subject || '').includes('তাজবীদ')) &&
+        ((headerConfig.grade || '').includes('আলিম') ||
+          (headerConfig.grade || '').toLowerCase().includes('alim') ||
+          (headerConfig.grade || '').includes('العالم')))
+  );
+
+  const isDakhilQuran =
+    !isAlimQuran &&
+    Boolean(
+      (headerConfig.subject || '').includes('কুরআন') ||
+        (headerConfig.subject || '').includes('কোরআন') ||
+        (headerConfig.subject || '').includes('তাজবীদ') ||
+        (headerConfig.subject || '').includes('তাজভিদ')
+    );
+
   const isBangla1st =
     !isArabicPaper &&
     !isBangla2nd &&
+    !isDakhilQuran &&
+    !isAlimQuran &&
     ((headerConfig.subject || '').includes('বাংলা ১ম') ||
       (headerConfig.subject || '').includes('বাংলা প্রথম') ||
       (headerConfig.subject || '').includes('সাহিত্যপাঠ') ||
@@ -182,6 +229,40 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
     (headerConfig.grade || '').toLowerCase().includes('hsc') ||
     (headerConfig.grade || '').includes('আলিম') ||
     (headerConfig.grade || '').toLowerCase().includes('alim');
+
+  const isAlimArabic2nd =
+    (headerConfig.subjectCode || '') === '২০৬' ||
+    (headerConfig.subject || '').includes('الورقة الثانية') ||
+    (headerConfig.subject || '').includes('الأدب العربي') ||
+    (isArabic2nd &&
+      (isHscOrAlim ||
+        (headerConfig.grade || '').includes('العالم') ||
+        (headerConfig.grade || '').includes('عالم')));
+
+  const isAlimFiqh2nd =
+    (headerConfig.subjectCode || '') === '২০৪' ||
+    (headerConfig.subject || '').includes('الفقه الثاني') ||
+    (headerConfig.subject || '').includes('أصول الفقه') ||
+    ((headerConfig.subject || '').includes('ফিকহ') &&
+      ((headerConfig.subject || '').includes('২য়') ||
+        (headerConfig.subject || '').includes('২য়') ||
+        (headerConfig.subject || '').includes('দ্বিতীয়') ||
+        (headerConfig.subject || '').includes('দ্বিতীয়')));
+
+  const isAlimFiqh1st =
+    !isAlimFiqh2nd &&
+    ((headerConfig.subjectCode || '') === '২০৩' ||
+      (headerConfig.subject || '').includes('الفقه الأول') ||
+      ((headerConfig.subject || '').includes('ফিকহ') &&
+        ((headerConfig.subject || '').includes('১ম') || (headerConfig.subject || '').includes('প্রথম'))));
+
+  const isAlimFiqh = isAlimFiqh1st || isAlimFiqh2nd;
+
+  const isDakhilAqaidFiqh =
+    !isArabicPaper &&
+    !isAlimFiqh &&
+    ((headerConfig.subject || '').includes('আকাইদ') ||
+      ((headerConfig.subject || '').includes('ফিকহ') && !(headerConfig.subject || '').includes('হাদিস')));
 
   const fontSizePt =
     layoutConfig.customFontSizePt ||
@@ -264,8 +345,79 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
         {/* ─── SHEET 1: INSERT QUESTIONS ─── */}
         {activeSheet === 'insert' && (
           <div className="space-y-4">
-            {/* Arabic 2nd Paper Special Sections */}
-            {isArabic2nd && (
+            {/* Alim Arabic 2nd Paper Special Sections (Code 206) */}
+            {isAlimArabic2nd && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-emerald-800 uppercase">
+                  আলিম আরবি ২য় পত্র (কোড: ২০৬)
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {onOpenAlimAr2QawaidModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenAlimAr2QawaidModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-emerald-700" />
+                        <span>+ (أ) القواعد (১–১০ নং : ৩৫ নম্বর)</span>
+                      </span>
+                      {alimAr2QawaidCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px]">
+                          {alimAr2QawaidCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {onOpenIkhtibarModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenIkhtibarModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-indigo-700" />
+                        <span>+ (ب) اختبار القواعد (১১ নং : ১৫ নম্বর)</span>
+                      </span>
+                      {ikhtibarCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-700 text-white text-[10px]">
+                          {ikhtibarCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {onOpenAlimAr2TarjamaModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenAlimAr2TarjamaModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-amber-700" />
+                        <span>+ (ج) الترجمة والإنشاء (১২–১৬ নং : ৫০ নম্বর)</span>
+                      </span>
+                      {alimAr2TarjamaCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-700 text-white text-[10px]">
+                          {alimAr2TarjamaCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Arabic 2nd Paper Special Sections (Dakhil) */}
+            {isArabic2nd && !isAlimArabic2nd && (
               <div className="space-y-2">
                 <p className="text-[11px] font-bold text-emerald-800 uppercase">
                   আরবি ২য় পত্র (বোর্ড কাঠামো)
@@ -557,8 +709,174 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
               </div>
             )}
 
-            {/* Standard Question Typologies (Hidden when Bangla 1st or 2nd Paper is selected) */}
-            {!isBangla1st && !isBangla2nd ? (
+            {/* Dakhil Aqaid & Fiqh Special Sections */}
+            {isDakhilAqaidFiqh && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-emerald-800 uppercase">
+                  আকাইদ ও ফিকহ (৬ষ্ঠ–১০ম / দাখিল বোর্ড কাঠামো)
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {onOpenBanglaMcqModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenBanglaMcqModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-indigo-700" />
+                        <span>+ বহুনির্বাচনি অভীক্ষা (MCQ - ৪০ নম্বর)</span>
+                      </span>
+                      {banglaMcqCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-700 text-white text-[10px]">
+                          {banglaMcqCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {onOpenAqaidFiqhWrittenModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenAqaidFiqhWrittenModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-emerald-700" />
+                        <span>+ রচনামূলক প্রশ্ন (খ–চ বিভাগ : ৬০ নম্বর)</span>
+                      </span>
+                      {aqaidFiqhWrittenCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px]">
+                          {aqaidFiqhWrittenCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Alim Fiqh 1st & 2nd Paper Special Section */}
+            {isAlimFiqh && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-emerald-800 uppercase">
+                  {isAlimFiqh2nd
+                    ? 'আল ফিকহ ২য় পত্র (আলিম — কোড: ২০৪)'
+                    : 'আল ফিকহ ১ম পত্র (আলিম — কোড: ২০৩)'}
+                </p>
+                {onOpenAlimFiqhModal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSheet(null);
+                      onOpenAlimFiqhModal();
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold active:scale-98"
+                  >
+                    <span className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-emerald-700" />
+                      <span>
+                        {isAlimFiqh2nd
+                          ? '+ আল ফিকহ ২য় পত্র (উসূলুল ফিকহ ও ফারায়িয - ১০০)'
+                          : '+ আল ফিকহ ১ম পত্র প্রশ্নাবলি (১০০ নম্বর)'}
+                      </span>
+                    </span>
+                    {alimFiqhCount > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px]">
+                        {alimFiqhCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Dakhil Quran & Tajweed Special Sections */}
+            {isDakhilQuran && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-emerald-800 uppercase">
+                  আল কুরআন মাজিদ ও তাজবীদ (দাখিল — কোড: ১০১)
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {onOpenBanglaMcqModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenBanglaMcqModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-indigo-700" />
+                        <span>+ বহুনির্বাচনি অভীক্ষা (MCQ - ৪০ নম্বর)</span>
+                      </span>
+                      {banglaMcqCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-700 text-white text-[10px]">
+                          {banglaMcqCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {onOpenDakhilQuranWrittenModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenDakhilQuranWrittenModal();
+                      }}
+                      className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold active:scale-98"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-emerald-700" />
+                        <span>+ রচনামূলক প্রশ্ন (খ–ঘ বিভাগ : ৬০ নম্বর)</span>
+                      </span>
+                      {dakhilQuranWrittenCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px]">
+                          {dakhilQuranWrittenCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Alim Quran Majid Special Section */}
+            {isAlimQuran && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-emerald-800 uppercase">
+                  القرآن المجيد — আলিম আল কুরআন মাজিদ (কোড: ২০১)
+                </p>
+                {onOpenAlimQuranModal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSheet(null);
+                      onOpenAlimQuranModal();
+                    }}
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold active:scale-98"
+                  >
+                    <span className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-emerald-700" />
+                      <span>+ القرآن المجيد — مجموعة (أ) ও (ب) (১০০ নম্বর)</span>
+                    </span>
+                    {alimQuranCount > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-700 text-white text-[10px]">
+                        {alimQuranCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Standard Question Typologies (Hidden when dedicated subject modals apply) */}
+            {!isBangla1st && !isBangla2nd && !isDakhilAqaidFiqh && !isAlimFiqh && !isDakhilQuran && !isAlimQuran ? (
               <div className="space-y-2">
                 <p className="text-[11px] font-bold text-slate-500 uppercase">সাধারণ প্রশ্ন ও বিভাগ</p>
                 <div className="grid grid-cols-2 gap-2">

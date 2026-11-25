@@ -1,6 +1,7 @@
 import { ExamPaperData, GenerateQuestionsRequest, GenerateQuestionsResponse, QuestionData } from 'proshno-shared';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const RAW_API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
+const API_BASE_URL = RAW_API_URL.endsWith('/api') ? RAW_API_URL : `${RAW_API_URL}/api`;
 
 export type AiProvider = 'gemini' | 'openrouter';
 
@@ -190,8 +191,19 @@ export async function downloadPdfDeliverable(
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || `Failed to download ${endpoint} PDF.`);
+    let message = `Failed to download ${endpoint} PDF (HTTP ${res.status}).`;
+    try {
+      const errorText = await res.text();
+      if (errorText) {
+        try {
+          const parsed = JSON.parse(errorText);
+          message = parsed.error || parsed.message || message;
+        } catch {
+          message = errorText.slice(0, 200);
+        }
+      }
+    } catch {}
+    throw new Error(message);
   }
 
   return res.blob();

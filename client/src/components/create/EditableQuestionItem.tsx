@@ -610,6 +610,541 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             --- ফাঁকা স্থান (Spacer: {Math.max(8, customSpacingTop + customSpacingBottom + 20)}px) ---
           </span>
         </div>
+      ) : question.groupRole === 'aqaid_section_banner' ? (
+        /* ───────────────── AQAID & FIQH 3-LINE CENTERED SECTION BANNER ───────────────── */
+        <div
+          dir="ltr"
+          className="text-center font-serif my-2 py-0.5 space-y-0.5 text-slate-900"
+        >
+          {(question.stemOrPassage || '').split('\n').map((line, lIdx) => (
+            <div
+              key={lIdx}
+              style={{ fontWeight: lIdx === 1 ? 500 : 700 }}
+              className={lIdx === 0 ? 'font-bold text-[1.02em]' : lIdx === 1 ? 'text-[0.95em]' : 'font-bold text-[0.96em]'}
+            >
+              <MultiScriptText text={line} />
+            </div>
+          ))}
+        </div>
+      ) : question.groupRole === 'aqaid_written_item' ? (
+        /* ───────────────── AQAID & FIQH WRITTEN QUESTION (Normal weight, inline Arabic + Bengali) ───────────────── */
+        <div
+          dir="ltr"
+          className="flex items-start gap-2 font-serif text-[1em] text-slate-900 my-1"
+        >
+          {qNumberDisplay ? (
+            <span
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleNumberBlur}
+              className="q-number shrink-0 min-w-[22px] outline-none"
+            >
+              {qNumberDisplay}
+            </span>
+          ) : null}
+          <div
+            contentEditable={isEditingText}
+            data-editable-field="true"
+            suppressContentEditableWarning
+            onBlur={handleStemBlur}
+            className="flex-1 text-justify whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+          >
+            <MultiScriptText text={question.stemOrPassage || 'প্রশ্ন লিখুন...'} />
+          </div>
+        </div>
+      ) : question.groupRole === 'alim_fiqh_banner' ? (
+        /* ───────────────── ALIM FIQH CENTERED UNDERLINED ARABIC SECTION HEADER ───────────────── */
+        <div
+          dir="rtl"
+          className="text-center font-ar my-2 py-0.5 space-y-1 text-slate-900"
+        >
+          {(question.stemOrPassage || '').split('\n').map((line, lIdx) => (
+            <div key={lIdx} className="text-center">
+              <span className="font-bold text-[1.06em] underline decoration-slate-900 decoration-[1.5px] underline-offset-4">
+                <MultiScriptText text={line} />
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : question.groupRole === 'alim_fiqh_item' ? (
+        /* ───────────────── ALIM FIQH ARABIC QUESTION + OPTIONAL NEXT-LINE BENGALI TRANSLATION ───────────────── */
+        <div className="my-1.5 space-y-1">
+          <div
+            dir="rtl"
+            className="flex items-start gap-2 font-ar text-[1.04em] text-slate-900 text-right"
+          >
+            {qNumberDisplay ? (
+              <span
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={handleNumberBlur}
+                className="q-number font-bold shrink-0 min-w-[22px] outline-none"
+              >
+                {qNumberDisplay}
+              </span>
+            ) : null}
+            <div
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleStemBlur}
+              className="flex-1 whitespace-pre-line text-justify outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              <MultiScriptText text={question.stemOrPassage || 'اكتب السؤال هنا...'} />
+            </div>
+          </div>
+
+          {question.subQuestions?.[0]?.questionText?.trim() && (() => {
+            const rawBn = question.subQuestions[0].questionText.trim();
+            const displayBn =
+              rawBn.startsWith('(') && rawBn.endsWith(')') ? rawBn : `(${rawBn})`;
+            return (
+              <div
+                dir="ltr"
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={(e) => {
+                  const text = e.currentTarget.innerText.trim().replace(/^\((.*)\)$/, '$1').trim();
+                  const updated = [...(question.subQuestions || [])];
+                  if (updated[0]) {
+                    updated[0] = { ...updated[0], questionText: text };
+                    onUpdate({ ...question, subQuestions: updated });
+                  }
+                }}
+                className="font-serif text-[0.94em] text-slate-800 text-left pl-4 pr-2 whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+              >
+                <MultiScriptText text={displayBn} />
+              </div>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'quran_section_banner' ? (
+        /* ───────────────── DAKHIL QURAN & TAJWEED SECTION HEADER (খ/গ/ঘ বিভাগ) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-slate-900">
+          <div className="text-center space-y-0.5">
+            {(question.stemOrPassage || '').split('\n').map((line, lIdx) => (
+              <div
+                key={lIdx}
+                className={lIdx === 0 ? 'font-bold text-[1.04em]' : 'font-semibold text-[0.95em]'}
+              >
+                <MultiScriptText text={line} />
+              </div>
+            ))}
+          </div>
+          {question.customMarksText ? (
+            <div className="text-right text-[0.88em] font-bold text-slate-800 pr-0.5 -mt-1">
+              {question.customMarksText}
+            </div>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'quran_surah_header' ? (
+        /* ───────────────── DAKHIL QURAN CENTERED SURAH HEADER ───────────────── */
+        <div dir="ltr" className="text-center font-serif font-bold text-[1em] text-slate-900 my-1">
+          <span
+            contentEditable={isEditingText}
+            data-editable-field="true"
+            suppressContentEditableWarning
+            onBlur={handleStemBlur}
+            className="outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded px-1 cursor-text"
+          >
+            <MultiScriptText text={question.stemOrPassage || 'সূরা'} />
+          </span>
+        </div>
+      ) : question.groupRole === 'quran_ayat_item' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── DAKHIL QURAN AYAT QUESTION (২–৮ নং: ক অনুবাদ [৫], খ ব্যাখ্যা/তারকিব [৩], গ তাহকিক [২]) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[1em] text-slate-900 space-y-1.5">
+          {(() => {
+            const subKa = question.subQuestions[0];
+            const subKha = question.subQuestions[1];
+            const subGa = question.subQuestions[2];
+            const toBn = (n: number) => String(n).replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]);
+            return (
+              <>
+                {/* (ক) বাংলায় অনুবাদ কর + আরবি আয়াত */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                    {qNumberDisplay ? (
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={handleNumberBlur}
+                        className="q-number font-bold shrink-0 min-w-[22px] outline-none"
+                      >
+                        {qNumberDisplay}
+                      </span>
+                    ) : null}
+                    <span className="shrink-0">(ক)</span>
+                    <span className="flex-1">
+                      <MultiScriptText text={subKa?.bloomTitle || 'বাংলায় অনুবাদ কর:'} />
+                    </span>
+                  </div>
+                  <span className="q-marks shrink-0 font-bold text-[0.95em] ps-2">
+                    {toBn(subKa?.marks || 5)}
+                  </span>
+                </div>
+
+                {subKa?.questionText && (
+                  <div
+                    dir="rtl"
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleCqPartBlur(0, e)}
+                    className="font-ar text-[1.12em] leading-[2] text-right text-justify pl-8 pr-4 whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                  >
+                    <MultiScriptText text={subKa.questionText} />
+                  </div>
+                )}
+
+                {/* (খ) শানে নুযূল / ব্যাখ্যা / তারকিব */}
+                {subKha && (
+                  <div className="space-y-1">
+                    <div className="flex items-start justify-between gap-2 pl-[26px]">
+                      <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                        <span className="shrink-0">(খ)</span>
+                        <span
+                          contentEditable={isEditingText}
+                          data-editable-field="true"
+                          suppressContentEditableWarning
+                          onBlur={(e) => handleCqPartBlur(1, e)}
+                          className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                        >
+                          <MultiScriptText text={subKha.questionText || 'শানে নুযূল / ব্যাখ্যা লিখুন...'} />
+                        </span>
+                      </div>
+                      <span className="q-marks shrink-0 font-bold text-[0.95em] ps-2">
+                        {toBn(subKha.marks || 3)}
+                      </span>
+                    </div>
+                    {subKha.bloomTitle && (
+                      <div
+                        dir="rtl"
+                        className="font-ar text-[1.08em] text-right pl-10 pr-6"
+                      >
+                        <MultiScriptText text={subKha.bloomTitle} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* (গ) তাহকিক কর */}
+                {subGa && (
+                  <div className="space-y-0.5">
+                    <div className="flex items-start justify-between gap-2 pl-[26px]">
+                      <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                        <span className="shrink-0">(গ)</span>
+                        <span className="flex-1">
+                          <MultiScriptText text={subGa.bloomTitle || 'তাহকিক কর (যে কোনো দুটি):'} />
+                        </span>
+                      </div>
+                      <span className="q-marks shrink-0 font-bold text-[0.95em] ps-2">
+                        {toBn(subGa.marks || 2)}
+                      </span>
+                    </div>
+                    {subGa.questionText && (
+                      <div
+                        dir="rtl"
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCqPartBlur(2, e)}
+                        className="font-ar text-[1.08em] text-right pl-10 pr-6 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        <MultiScriptText text={subGa.questionText} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'quran_short_item' ? (
+        /* ───────────────── DAKHIL QURAN গ ও ঘ বিভাগ QUESTION (৯–১৬ নং, মান ৫) ───────────────── */
+        <div dir="ltr" className="flex items-start justify-between gap-2 font-serif text-[1em] text-slate-900 my-1">
+          <div className="flex items-start gap-1.5 flex-1 min-w-0">
+            {qNumberDisplay ? (
+              <span
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={handleNumberBlur}
+                className="q-number shrink-0 min-w-[24px] outline-none"
+              >
+                {qNumberDisplay}
+              </span>
+            ) : null}
+            <div
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleStemBlur}
+              className="flex-1 text-justify whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              <MultiScriptText text={question.stemOrPassage || 'প্রশ্ন লিখুন...'} />
+            </div>
+          </div>
+          {marksDisplay ? (
+            <span className="q-marks shrink-0 font-bold text-[0.95em] ps-2">
+              {marksDisplay}
+            </span>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'alim_quran_banner' ? (
+        /* ───────────────── ALIM QURAN MAJID GROUP BANNER (مجموعة (أ) / مجموعة (ب)) ───────────────── */
+        <div dir="rtl" className="my-2 font-ar text-slate-900">
+          <div className="text-center space-y-0.5">
+            {(question.stemOrPassage || '').split('\n').map((line, lIdx) => (
+              <div
+                key={lIdx}
+                className={
+                  lIdx === 0
+                    ? 'font-bold text-[1.12em]'
+                    : lIdx === 1
+                    ? 'font-semibold text-[1em]'
+                    : 'text-[0.96em]'
+                }
+              >
+                <MultiScriptText text={line} />
+              </div>
+            ))}
+          </div>
+          {question.customMarksText ? (
+            <div className="text-left font-bold text-[0.94em] pl-1 -mt-1">
+              {question.customMarksText}
+            </div>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'alim_quran_group_a_item' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── ALIM QURAN MAJID GROUP A (١–٨: آيات [٩] + (أ) [٣] + (ب) [٣]) ───────────────── */
+        <div dir="rtl" className="my-2 font-ar text-[1.04em] text-slate-900 space-y-1.5">
+          {(() => {
+            const subA = question.subQuestions[0];
+            const subB = question.subQuestions[1];
+            const toAr = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[Number(d)]);
+            return (
+              <>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {qNumberDisplay ? (
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={handleNumberBlur}
+                        className="q-number font-bold shrink-0 min-w-[22px] outline-none"
+                      >
+                        {qNumberDisplay}
+                      </span>
+                    ) : null}
+                    <div
+                      contentEditable={isEditingText}
+                      data-editable-field="true"
+                      suppressContentEditableWarning
+                      onBlur={handleStemBlur}
+                      className="flex-1 text-right text-justify leading-[1.95] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                    >
+                      <MultiScriptText text={question.stemOrPassage || 'اكتب الآيات الكريمة...'} />
+                    </div>
+                  </div>
+                  <span className="q-marks font-bold shrink-0 ps-2">
+                    {marksDisplay || toAr(9)}
+                  </span>
+                </div>
+
+                {subA && (
+                  <div className="flex items-start justify-between gap-2 pr-7">
+                    <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                      <span className="shrink-0">( أ )</span>
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCqPartBlur(0, e)}
+                        className="flex-1 text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        <MultiScriptText text={subA.questionText || 'بين سبب نزول هذه الآيات الكريمة-'} />
+                      </span>
+                    </div>
+                    <span className="q-marks font-bold shrink-0 ps-2">
+                      {toAr(subA.marks || 3)}
+                    </span>
+                  </div>
+                )}
+
+                {subB && (
+                  <div className="flex items-start justify-between gap-2 pr-7">
+                    <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                      <span className="shrink-0">( ب )</span>
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCqPartBlur(1, e)}
+                        className="flex-1 text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        <MultiScriptText text={subB.questionText || 'حقق الكلمات : ...'} />
+                      </span>
+                    </div>
+                    <span className="q-marks font-bold shrink-0 ps-2">
+                      {toAr(subB.marks || 3)}
+                    </span>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'alim_quran_group_b_item' ? (
+        /* ───────────────── ALIM QURAN MAJID GROUP B (٩–١٠, الدرجات ١٠) ───────────────── */
+        <div dir="rtl" className="flex items-start justify-between gap-2 font-ar text-[1.04em] text-slate-900 my-1.5">
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            {qNumberDisplay ? (
+              <span
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={handleNumberBlur}
+                className="q-number font-bold shrink-0 min-w-[24px] outline-none"
+              >
+                {qNumberDisplay}
+              </span>
+            ) : null}
+            <div
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleStemBlur}
+              className="flex-1 text-right whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              <MultiScriptText text={question.stemOrPassage || 'اكتب السؤال هنا...'} />
+            </div>
+          </div>
+          {marksDisplay ? (
+            <span className="q-marks font-bold shrink-0 ps-2">
+              {marksDisplay}
+            </span>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'alim_ar2_banner' ? (
+        /* ───────────────── ALIM ARABIC 2ND PAPER CENTERED SECTION HEADER ───────────────── */
+        <div
+          dir="rtl"
+          className="text-center font-ar my-2 py-0.5 space-y-0.5 text-slate-900"
+        >
+          {(question.stemOrPassage || '').split('\n').map((line, lIdx) => (
+            <div
+              key={lIdx}
+              style={{ fontWeight: lIdx === 0 ? 700 : 600 }}
+              className={lIdx === 0 ? 'font-bold text-[1.08em]' : 'font-semibold text-[0.98em]'}
+            >
+              <MultiScriptText text={line} />
+            </div>
+          ))}
+        </div>
+      ) : (question.groupRole === 'alim_ar2_q12_ar_bn' ||
+          question.groupRole === 'alim_ar2_q13_bn_ar') &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── ALIM ARABIC 2ND PAPER Q12 & Q13 (CENTERED (أ) / (ب) + JUSTIFIED PASSAGES) ───────────────── */
+        <div dir="rtl" className="my-1.5 font-ar text-[1em] text-slate-900 space-y-1.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-1.5 flex-1 min-w-0">
+              {qNumberDisplay ? (
+                <span className="q-number font-bold shrink-0">{qNumberDisplay}</span>
+              ) : null}
+              <div
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={handleStemBlur}
+                className="font-bold flex-1 text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+              >
+                <MultiScriptText text={question.stemOrPassage} />
+              </div>
+            </div>
+            {marksDisplay ? (
+              <span className="q-marks font-bold shrink-0 ps-2">{marksDisplay}</span>
+            ) : null}
+          </div>
+
+          {question.subQuestions.map((sub, sIdx) => {
+            const isBnPassage = question.groupRole === 'alim_ar2_q13_bn_ar';
+            return (
+              <div key={sIdx} className="space-y-1">
+                <div className="text-center font-bold text-[1em]">
+                  ({sub.part || (sIdx === 0 ? 'أ' : 'ب')})
+                </div>
+                <div
+                  dir={isBnPassage ? 'ltr' : 'rtl'}
+                  contentEditable={isEditingText}
+                  data-editable-field="true"
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                  className={`${
+                    isBnPassage ? 'font-serif text-[0.94em] text-left' : 'font-ar text-[1em] text-right'
+                  } text-justify whitespace-pre-line px-2 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text`}
+                >
+                  <MultiScriptText
+                    text={sub.questionText || (isBnPassage ? 'বাংলা অনুচ্ছেদ লিখুন...' : 'اكتب النص العربي...')}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : question.groupRole === 'alim_ar2_q15_letter' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── ALIM ARABIC 2ND PAPER Q15 (APPLICATION + أو + LETTER) ───────────────── */
+        <div dir="rtl" className="my-1.5 font-ar text-[1em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-1.5 flex-1 min-w-0">
+              {qNumberDisplay ? (
+                <span className="q-number font-bold shrink-0">{qNumberDisplay}</span>
+              ) : null}
+              <div
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={(e) => handleCqPartBlur(0, e)}
+                className="flex-1 text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+              >
+                <MultiScriptText
+                  text={question.subQuestions[0]?.questionText || 'اكتب عريضة بالعربية...'}
+                />
+              </div>
+            </div>
+            {marksDisplay ? (
+              <span className="q-marks font-bold shrink-0 ps-2">{marksDisplay}</span>
+            ) : null}
+          </div>
+
+          {question.subQuestions[1] && (
+            <>
+              <div className="text-center font-bold py-0.5">أو</div>
+              <div
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={(e) => handleCqPartBlur(1, e)}
+                className="pr-5 text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+              >
+                <MultiScriptText
+                  text={question.subQuestions[1].questionText || 'اكتب بالعربية رسالة...'}
+                />
+              </div>
+            </>
+          )}
+        </div>
       ) : question.typology === 'GROUP_TITLE' || (question.typology as string) === 'SECTION_TITLE' ? (
         <div
           style={{
@@ -1329,6 +1864,12 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
 
       {/* ───────────────── SUB-QUESTIONS (Arabic Comprehension & CQ Parts) ───────────────── */}
       {!question.groupRole?.startsWith('bangla2nd_') &&
+        question.groupRole !== 'alim_fiqh_item' &&
+        question.groupRole !== 'alim_ar2_q12_ar_bn' &&
+        question.groupRole !== 'alim_ar2_q13_bn_ar' &&
+        question.groupRole !== 'alim_ar2_q15_letter' &&
+        question.groupRole !== 'quran_ayat_item' &&
+        question.groupRole !== 'alim_quran_group_a_item' &&
         question.subQuestions &&
         question.subQuestions.length > 0 && (
         <div className={`pt-1.5 space-y-1 text-[0.92em] font-serif ${isRTL ? 'pr-2' : 'pl-4'}`}>

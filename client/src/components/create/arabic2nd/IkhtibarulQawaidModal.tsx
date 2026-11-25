@@ -50,6 +50,7 @@ const ARABIC_DIGITS = ['١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩', '١
 interface IkhtibarulQawaidModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isAlim?: boolean;
   allGroups: IkhtibarQawaidGroup[];
   activeGroupId: string | null;
   onSelectGroupId: (groupId: string | null) => void;
@@ -64,6 +65,7 @@ interface IkhtibarulQawaidModalProps {
 export const IkhtibarulQawaidModal: React.FC<IkhtibarulQawaidModalProps> = ({
   isOpen,
   onClose,
+  isAlim = false,
   allGroups,
   activeGroupId,
   onSelectGroupId,
@@ -75,11 +77,15 @@ export const IkhtibarulQawaidModal: React.FC<IkhtibarulQawaidModalProps> = ({
   );
   const isEditMode = Boolean(activeGroup);
 
-  // Q3 main configuration
-  const [q3Number, setQ3Number] = useState('٣-');
-  const [q3Title, setQ3Title] = useState('اختبار القواعد (خمسة فقط) :');
-  const [q3MarksFormula, setQ3MarksFormula] = useState('٢٠ = ٤ × ٥');
-  const [q3Marks, setQ3Marks] = useState(20);
+  // Q3 main configuration (or Q11 for Alim)
+  const [q3Number, setQ3Number] = useState(isAlim ? '١١-' : '٣-');
+  const [q3Title, setQ3Title] = useState(
+    isAlim ? 'أجب عن ثلاثة فقط :' : 'اختبار القواعد (خمسة فقط) :'
+  );
+  const [q3MarksFormula, setQ3MarksFormula] = useState(
+    isAlim ? '١٥ = ٣ × ٥' : '٢٠ = ٤ × ٥'
+  );
+  const [q3Marks, setQ3Marks] = useState(isAlim ? 15 : 20);
 
   // Items configuration
   const [items, setItems] = useState<IkhtibarItemConfig[]>(DEFAULT_IKHTIBAR_ITEMS);
@@ -88,25 +94,27 @@ export const IkhtibarulQawaidModal: React.FC<IkhtibarulQawaidModalProps> = ({
   // Sync state on open or activeGroup change
   useEffect(() => {
     if (!activeGroup) {
-      setQ3Number('٣-');
-      setQ3Title('اختبار القواعد (خمسة فقط) :');
-      setQ3MarksFormula('٢٠ = ٤ × ٥');
-      setQ3Marks(20);
+      setQ3Number(isAlim ? '١١-' : '٣-');
+      setQ3Title(isAlim ? 'أجب عن ثلاثة فقط :' : 'اختبار القواعد (خمسة فقط) :');
+      setQ3MarksFormula(isAlim ? '١٥ = ٣ × ٥' : '٢٠ = ٤ × ٥');
+      setQ3Marks(isAlim ? 15 : 20);
       setItems(DEFAULT_IKHTIBAR_ITEMS);
       return;
     }
 
     const qs = activeGroup.questions;
     const titleQ = qs.find(
-      (q) => q.groupRole === 'ikhtibar_q3_title' || (q.customNumber && q.customNumber.includes('٣'))
+      (q) => q.groupRole === 'ikhtibar_q3_title' || (q.customNumber && (q.customNumber.includes('٣') || q.customNumber.includes('١١')))
     );
     if (titleQ) {
-      setQ3Number(titleQ.customNumber || '٣-');
-      setQ3Title(titleQ.stemOrPassage || 'اختبار القواعد (خمسة فقط) :');
-      setQ3MarksFormula(titleQ.customMarksText || '٢٠ = ٤ × ٥');
-      setQ3Marks(titleQ.marks || 20);
+      setQ3Number(titleQ.customNumber || (isAlim ? '١١-' : '٣-'));
+      setQ3Title(
+        titleQ.stemOrPassage || (isAlim ? 'أجب عن ثلاثة فقط :' : 'اختبار القواعد (خمسة فقط) :')
+      );
+      setQ3MarksFormula(titleQ.customMarksText || (isAlim ? '١٥ = ٣ × ٥' : '٢٠ = ٤ × ٥'));
+      setQ3Marks(titleQ.marks || (isAlim ? 15 : 20));
     }
-  }, [activeGroup]);
+  }, [activeGroup, isAlim]);
 
   if (!isOpen) return null;
 
@@ -152,16 +160,34 @@ export const IkhtibarulQawaidModal: React.FC<IkhtibarulQawaidModalProps> = ({
   const buildQuestions = (targetGroupId: string): QuestionData[] => {
     const list: QuestionData[] = [];
 
-    // 1. Parent Q3 Title Question
+    // 0. For Alim, prepend centered section banner (ب) اختبار القواعد / الدرجة—١٥
+    if (isAlim) {
+      list.push({
+        groupId: targetGroupId,
+        groupRole: 'alim_ar2_banner',
+        subject: 'الأدب العربي (الورقة الثانية)',
+        grade: 'الصف الثاني من العالم',
+        typology: 'GROUP_TITLE',
+        customNumber: '',
+        stemOrPassage: '(ب) اختبار القواعد\nالدرجة—١٥',
+        customMarksText: '',
+        marks: 0,
+        difficulty: 'Easy',
+        languages: ['ar'],
+        sourceType: 'MANUAL',
+      });
+    }
+
+    // 1. Parent Q3 / Q11 Title Question
     list.push({
       groupId: targetGroupId,
       groupRole: 'ikhtibar_q3_title',
-      subject: 'قواعد اللغة العربية',
-      grade: 'الصف العاشر من الداخل',
+      subject: isAlim ? 'الأدب العربي (الورقة الثانية)' : 'قواعد اللغة العربية',
+      grade: isAlim ? 'الصف الثاني من العالم' : 'الصف العاشر من الداخل',
       typology: 'GROUP_TITLE',
-      customNumber: q3Number.trim() || '٣-',
+      customNumber: q3Number.trim() || (isAlim ? '١١-' : '٣-'),
       stemOrPassage: q3Title.trim(),
-      customMarksText: q3MarksFormula.trim() || '٢٠ = ٤ × ٥',
+      customMarksText: q3MarksFormula.trim() || (isAlim ? '١٥ = ٣ × ٥' : '٢٠ = ٤ × ٥'),
       marks: q3Marks,
       difficulty: 'Medium',
       languages: ['ar'],

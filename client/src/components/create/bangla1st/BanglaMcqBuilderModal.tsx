@@ -52,6 +52,7 @@ interface BanglaMcqBuilderModalProps {
   onClose: () => void;
   grade?: string;
   subject?: string;
+  targetMarks?: number;
   allGroups: BanglaMcqGroup[];
   activeGroupId: string | null;
   onSelectGroupId: (groupId: string | null) => void;
@@ -70,10 +71,14 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
   onClose,
   grade = '১০ম শ্রেণি (এসএসসি)',
   subject = 'বাংলা ১ম পত্র',
+  targetMarks = 30,
   allGroups,
   activeGroupId,
   onSave,
 }) => {
+  const isAqaid = subject.includes('আকাইদ') || subject.includes('ফিকহ');
+  const effectiveTargetMarks = targetMarks || (isAqaid ? 40 : 30);
+  const targetMarksBn = toBengaliNumber(effectiveTargetMarks);
   const activeGroup = useMemo(
     () => (activeGroupId ? allGroups.find((g) => g.groupId === activeGroupId) || null : null),
     [allGroups, activeGroupId]
@@ -423,10 +428,10 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <h2 className="text-sm sm:text-base font-extrabold truncate">
-                  বাংলা ১ম পত্র — বহুনির্বাচনি (MCQ)
+                  {subject} — বহুনির্বাচনি (MCQ)
                 </h2>
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-300/30 font-bold whitespace-nowrap">
-                  মোট {toBengaliNumber(totalMcqCount)} / ৩০ নম্বর
+                  মোট {toBengaliNumber(totalMcqCount)} / {targetMarksBn} নম্বর
                 </span>
               </div>
               <p className="text-[11px] text-emerald-200 mt-0.5 truncate">
@@ -522,7 +527,7 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
           {/* Bottom "Add More MCQs" Card */}
           <div className="bg-white border-2 border-dashed border-emerald-300 rounded-2xl p-3.5 sm:p-4 text-center space-y-2.5">
             <p className="text-xs font-extrabold text-slate-700">
-              + আরও এমসিকিউ (MCQ) যোগ করুন ({toBengaliNumber(totalMcqCount)} / ৩০)
+              + আরও এমসিকিউ (MCQ) যোগ করুন ({toBengaliNumber(totalMcqCount)} / {targetMarksBn})
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
@@ -584,7 +589,9 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
               className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white text-xs font-extrabold shadow-sm transition"
             >
               <span>
-                {subject.includes('২য়') || subject.includes('২য়') || subject.includes('দ্বিতীয়')
+                {isAqaid
+                  ? 'সেভ ও রচনামূলক (খ–চ বিভাগ : ৬০) অংশে যান'
+                  : subject.includes('২য়') || subject.includes('২য়') || subject.includes('দ্বিতীয়')
                   ? 'সেভ ও রচনামূলক (নির্মিতি - ৭০) অংশে যান'
                   : 'সেভ ও সৃজনশীল (CQ - ৭০) অংশে যান'}
               </span>

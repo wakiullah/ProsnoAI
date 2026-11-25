@@ -20,6 +20,7 @@ export function getEmbeddedFontCss(): string {
     path.resolve(__dirname, '../../public/fonts'),
     path.resolve(__dirname, '../../../client/public/fonts'),
     path.resolve(process.cwd(), 'public/fonts'),
+    path.resolve(process.cwd(), 'server/public/fonts'),
     path.resolve(process.cwd(), '../client/public/fonts'),
   ];
 
@@ -32,133 +33,99 @@ export function getEmbeddedFontCss(): string {
 
   let fontFaces = '';
   if (fontDir) {
-    try {
-      const amiriRegPath = fs.existsSync(path.join(fontDir, 'Amiri-Regular.ttf'))
-        ? path.join(fontDir, 'Amiri-Regular.ttf')
-        : path.join(fontDir, 'TraditionalArabic.ttf');
-      const amiriBoldPath = path.join(fontDir, 'Amiri-Bold.ttf');
+    // Use local HTTP loopback URLs instead of inlining ~5MB of duplicate Base64 into every HTML string.
+    // Chromium fetches only the fonts actually used on the page in <2ms and caches them across renders,
+    // preventing 25s Navigation timeouts on low-RAM/CPU Render containers.
+    const port = process.env.PORT || 5000;
+    const base = `http://127.0.0.1:${port}/fonts`;
 
-      if (fs.existsSync(amiriRegPath)) {
-        const regBase64 = fs.readFileSync(amiriRegPath).toString('base64');
-        const boldBase64 = fs.existsSync(amiriBoldPath)
-          ? fs.readFileSync(amiriBoldPath).toString('base64')
-          : null;
+    const hasAmiriReg = fs.existsSync(path.join(fontDir, 'Amiri-Regular.ttf'));
+    const hasTradAr = fs.existsSync(path.join(fontDir, 'TraditionalArabic.ttf'));
+    const hasAmiriBold = fs.existsSync(path.join(fontDir, 'Amiri-Bold.ttf'));
+    const regFile = hasAmiriReg ? 'Amiri-Regular.ttf' : hasTradAr ? 'TraditionalArabic.ttf' : null;
 
-        fontFaces += `
-          @font-face {
-            font-family: 'Traditional Arabic';
-            src: url('data:font/truetype;charset=utf-8;base64,${regBase64}') format('truetype');
-            font-weight: 400;
-            font-style: normal;
-            font-display: block;
-          }
-          @font-face {
-            font-family: 'Amiri';
-            src: url('data:font/truetype;charset=utf-8;base64,${regBase64}') format('truetype');
-            font-weight: 400;
-            font-style: normal;
-            font-display: block;
-          }
-        `;
-
-        if (boldBase64) {
-          fontFaces += `
-            @font-face {
-              font-family: 'Traditional Arabic';
-              src: url('data:font/truetype;charset=utf-8;base64,${boldBase64}') format('truetype');
-              font-weight: 700;
-              font-style: normal;
-              font-display: block;
-            }
-            @font-face {
-              font-family: 'Traditional Arabic';
-              src: url('data:font/truetype;charset=utf-8;base64,${boldBase64}') format('truetype');
-              font-weight: 800;
-              font-style: normal;
-              font-display: block;
-            }
-            @font-face {
-              font-family: 'Amiri';
-              src: url('data:font/truetype;charset=utf-8;base64,${boldBase64}') format('truetype');
-              font-weight: 700;
-              font-style: normal;
-              font-display: block;
-            }
-            @font-face {
-              font-family: 'Amiri';
-              src: url('data:font/truetype;charset=utf-8;base64,${boldBase64}') format('truetype');
-              font-weight: 800;
-              font-style: normal;
-              font-display: block;
-            }
-          `;
+    if (regFile) {
+      fontFaces += `
+        @font-face {
+          font-family: 'Traditional Arabic';
+          src: url('${base}/${regFile}') format('truetype');
+          font-weight: 400;
+          font-style: normal;
+          font-display: swap;
         }
-      }
+        @font-face {
+          font-family: 'Amiri';
+          src: url('${base}/${regFile}') format('truetype');
+          font-weight: 400;
+          font-style: normal;
+          font-display: swap;
+        }
+      `;
+    }
 
-      const notoPath = path.join(fontDir, 'NotoNaskhArabic.ttf');
-      if (fs.existsSync(notoPath)) {
-        const notoBase64 = fs.readFileSync(notoPath).toString('base64');
-        // Variable font (contains fvar table): single 100..900 declaration provides native bold weights
-        fontFaces += `
-          @font-face {
-            font-family: 'Noto Naskh Arabic';
-            src: url('data:font/truetype;charset=utf-8;base64,${notoBase64}') format('truetype');
-            font-weight: 100 900;
-            font-style: normal;
-            font-display: block;
-          }
-        `;
-      }
+    if (hasAmiriBold) {
+      fontFaces += `
+        @font-face {
+          font-family: 'Traditional Arabic';
+          src: url('${base}/Amiri-Bold.ttf') format('truetype');
+          font-weight: 700 800;
+          font-style: normal;
+          font-display: swap;
+        }
+        @font-face {
+          font-family: 'Amiri';
+          src: url('${base}/Amiri-Bold.ttf') format('truetype');
+          font-weight: 700 800;
+          font-style: normal;
+          font-display: swap;
+        }
+      `;
+    }
 
-      const lateefRegPath = path.join(fontDir, 'Lateef-Regular.ttf');
-      const lateefSemiBoldPath = path.join(fontDir, 'Lateef-SemiBold.ttf');
-      const lateefBoldPath = path.join(fontDir, 'Lateef-Bold.ttf');
-      if (fs.existsSync(lateefRegPath)) {
-        const lateefRegBase64 = fs.readFileSync(lateefRegPath).toString('base64');
+    if (fs.existsSync(path.join(fontDir, 'NotoNaskhArabic.ttf'))) {
+      fontFaces += `
+        @font-face {
+          font-family: 'Noto Naskh Arabic';
+          src: url('${base}/NotoNaskhArabic.ttf') format('truetype');
+          font-weight: 100 900;
+          font-style: normal;
+          font-display: swap;
+        }
+      `;
+    }
+
+    if (fs.existsSync(path.join(fontDir, 'Lateef-Regular.ttf'))) {
+      fontFaces += `
+        @font-face {
+          font-family: 'Lateef';
+          src: url('${base}/Lateef-Regular.ttf') format('truetype');
+          font-weight: 400;
+          font-style: normal;
+          font-display: swap;
+        }
+      `;
+      if (fs.existsSync(path.join(fontDir, 'Lateef-SemiBold.ttf'))) {
         fontFaces += `
           @font-face {
             font-family: 'Lateef';
-            src: url('data:font/truetype;charset=utf-8;base64,${lateefRegBase64}') format('truetype');
-            font-weight: 400;
+            src: url('${base}/Lateef-SemiBold.ttf') format('truetype');
+            font-weight: 600 700;
             font-style: normal;
-            font-display: block;
+            font-display: swap;
           }
         `;
-        if (fs.existsSync(lateefSemiBoldPath)) {
-          const lateefSemiBase64 = fs.readFileSync(lateefSemiBoldPath).toString('base64');
-          // Map 600 & 700 to Lateef SemiBold for crisp, balanced question headings (not overly heavy)
-          fontFaces += `
-            @font-face {
-              font-family: 'Lateef';
-              src: url('data:font/truetype;charset=utf-8;base64,${lateefSemiBase64}') format('truetype');
-              font-weight: 600;
-              font-style: normal;
-              font-display: block;
-            }
-            @font-face {
-              font-family: 'Lateef';
-              src: url('data:font/truetype;charset=utf-8;base64,${lateefSemiBase64}') format('truetype');
-              font-weight: 700;
-              font-style: normal;
-              font-display: block;
-            }
-          `;
-        }
-        if (fs.existsSync(lateefBoldPath)) {
-          const lateefBoldBase64 = fs.readFileSync(lateefBoldPath).toString('base64');
-          fontFaces += `
-            @font-face {
-              font-family: 'Lateef';
-              src: url('data:font/truetype;charset=utf-8;base64,${lateefBoldBase64}') format('truetype');
-              font-weight: 800;
-              font-style: normal;
-              font-display: block;
-            }
-          `;
-        }
       }
-    } catch (e) {
-      console.warn('[pdfService] Failed reading embedded font files:', e);
+      if (fs.existsSync(path.join(fontDir, 'Lateef-Bold.ttf'))) {
+        fontFaces += `
+          @font-face {
+            font-family: 'Lateef';
+            src: url('${base}/Lateef-Bold.ttf') format('truetype');
+            font-weight: 800;
+            font-style: normal;
+            font-display: swap;
+          }
+        `;
+      }
     }
   }
 
@@ -205,6 +172,12 @@ async function getBrowser(): Promise<Browser> {
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
       '--disable-gpu',
+      '--no-zygote',
+      '--disable-extensions',
+      '--disable-background-networking',
+      '--disable-default-apps',
+      '--disable-sync',
+      '--mute-audio',
       '--font-render-hinting=none',
     ],
   });
@@ -258,19 +231,22 @@ export async function renderHtmlToPdf(
     const isLegal = options.format === 'Legal';
     const viewportWidth = isLegal ? 816 : 794;
     const viewportHeight = isLegal ? 1344 : 1123;
-    await page.setViewport({ width: viewportWidth, height: viewportHeight, deviceScaleFactor: 2 });
+    // PDF output is vector-based; deviceScaleFactor: 1 saves 4x framebuffer RAM on 512MB Render containers
+    await page.setViewport({ width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1 });
 
     await page.setContent(finalHtml, {
-      // networkidle2: at most 2 open connections — avoids 30s hangs on CDN timeouts
-      waitUntil: ['domcontentloaded', 'networkidle2'],
-      timeout: 25000,
+      // domcontentloaded avoids 25s hangs when external font/CDN links are slow on Render
+      waitUntil: 'domcontentloaded',
+      timeout: 60000,
     });
 
-    // Wait for all Base64 and embedded fonts to finish loading in Chromium
+    // Wait for local loopback / system fonts to finish loading (capped at 5s so it never hangs)
     await page.evaluate(async () => {
       if (document.fonts) {
-        await document.fonts.ready;
-        // Trigger reflow to finalize glyph layout & line heights
+        await Promise.race([
+          document.fonts.ready,
+          new Promise((resolve) => setTimeout(resolve, 5000)),
+        ]);
         void document.body.offsetHeight;
       }
     });

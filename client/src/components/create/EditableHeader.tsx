@@ -39,7 +39,10 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
   const isArabicSubject =
     headerConfig.subject?.includes('আরবি') ||
     headerConfig.subject?.includes('العربية') ||
+    headerConfig.subject?.includes('الفقه') ||
     headerConfig.subject?.includes('Arabic') ||
+    headerConfig.subjectCode === '২০৩' ||
+    headerConfig.subjectCode === '২০৪' ||
     layoutConfig.numberingFormat === 'ar';
 
   // 100% Arabic defaults when paper is Arabic to prevent Bengali text leakage

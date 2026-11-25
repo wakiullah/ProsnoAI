@@ -94,6 +94,18 @@ interface DocumentRibbonProps {
   bangla2ndHscGrammarCount?: number;
   onOpenBangla2ndHscNirmitiModal?: () => void;
   bangla2ndHscNirmitiCount?: number;
+  onOpenAqaidFiqhWrittenModal?: () => void;
+  aqaidFiqhWrittenCount?: number;
+  onOpenAlimFiqhModal?: () => void;
+  alimFiqhCount?: number;
+  onOpenAlimAr2QawaidModal?: () => void;
+  alimAr2QawaidCount?: number;
+  onOpenAlimAr2TarjamaModal?: () => void;
+  alimAr2TarjamaCount?: number;
+  onOpenDakhilQuranWrittenModal?: () => void;
+  dakhilQuranWrittenCount?: number;
+  onOpenAlimQuranModal?: () => void;
+  alimQuranCount?: number;
   onOpenSettingsModal?: () => void;
   onAutoRenumber?: () => void;
   onStripAllHarakat?: () => void;
@@ -216,6 +228,18 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
   bangla2ndHscGrammarCount = 0,
   onOpenBangla2ndHscNirmitiModal,
   bangla2ndHscNirmitiCount = 0,
+  onOpenAqaidFiqhWrittenModal,
+  aqaidFiqhWrittenCount = 0,
+  onOpenAlimFiqhModal,
+  alimFiqhCount = 0,
+  onOpenAlimAr2QawaidModal,
+  alimAr2QawaidCount = 0,
+  onOpenAlimAr2TarjamaModal,
+  alimAr2TarjamaCount = 0,
+  onOpenDakhilQuranWrittenModal,
+  dakhilQuranWrittenCount = 0,
+  onOpenAlimQuranModal,
+  alimQuranCount = 0,
   onAutoRenumber,
   onStripAllHarakat,
   onAutoFitPage,
@@ -253,9 +277,32 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
         (headerConfig.subjectCode === '১৩৬' && headerConfig.subject?.includes('বাংলা'))
     );
 
+  const isAlimQuranPaper = Boolean(
+    headerConfig.subjectCode === '২০১' ||
+      headerConfig.subject?.includes('القرآن المجيد') ||
+      headerConfig.subject?.includes('القران المجيد') ||
+      ((headerConfig.subject?.includes('কুরআন') ||
+        headerConfig.subject?.includes('কোরআন') ||
+        headerConfig.subject?.includes('তাজবীদ')) &&
+        (headerConfig.grade?.includes('আলিম') ||
+          headerConfig.grade?.toLowerCase().includes('alim') ||
+          headerConfig.grade?.includes('العالم')))
+  );
+
+  const isDakhilQuranPaper =
+    !isAlimQuranPaper &&
+    Boolean(
+      headerConfig.subject?.includes('কুরআন') ||
+        headerConfig.subject?.includes('কোরআন') ||
+        headerConfig.subject?.includes('তাজবীদ') ||
+        headerConfig.subject?.includes('তাজভিদ')
+    );
+
   const isBangla1stPaper =
     !isArabicPaper &&
     !isBangla2ndPaper &&
+    !isDakhilQuranPaper &&
+    !isAlimQuranPaper &&
     Boolean(
       headerConfig.subject?.includes('বাংলা ১ম') ||
       headerConfig.subject?.includes('বাংলা প্রথম') ||
@@ -272,6 +319,46 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
         headerConfig.grade?.toLowerCase().includes('hsc') ||
         headerConfig.grade?.includes('আলিম') ||
         headerConfig.grade?.toLowerCase().includes('alim')
+    );
+
+  const isAlimArabic2ndPaper = Boolean(
+    headerConfig.subjectCode === '২০৬' ||
+      headerConfig.subject?.includes('الورقة الثانية') ||
+      headerConfig.subject?.includes('الأدب العربي') ||
+      (isArabic2ndPaper &&
+        (isHscOrAlim ||
+          headerConfig.grade?.includes('العالم') ||
+          headerConfig.grade?.includes('عالم')))
+  );
+
+  const isAlimFiqh2ndPaper = Boolean(
+    headerConfig.subjectCode === '২০৪' ||
+      headerConfig.subject?.includes('الفقه الثاني') ||
+      headerConfig.subject?.includes('أصول الفقه') ||
+      (headerConfig.subject?.includes('ফিকহ') &&
+        (headerConfig.subject?.includes('২য়') ||
+          headerConfig.subject?.includes('২য়') ||
+          headerConfig.subject?.includes('দ্বিতীয়') ||
+          headerConfig.subject?.includes('দ্বিতীয়')))
+  );
+
+  const isAlimFiqh1stPaper =
+    !isAlimFiqh2ndPaper &&
+    Boolean(
+      headerConfig.subjectCode === '২০৩' ||
+        headerConfig.subject?.includes('الفقه الأول') ||
+        (headerConfig.subject?.includes('ফিকহ') &&
+          (headerConfig.subject?.includes('১ম') || headerConfig.subject?.includes('প্রথম')))
+    );
+
+  const isAlimFiqhPaper = isAlimFiqh1stPaper || isAlimFiqh2ndPaper;
+
+  const isDakhilAqaidFiqhPaper =
+    !isArabicPaper &&
+    !isAlimFiqhPaper &&
+    Boolean(
+      headerConfig.subject?.includes('আকাইদ') ||
+        (headerConfig.subject?.includes('ফিকহ') && !headerConfig.subject?.includes('হাদিস'))
     );
 
   return (
@@ -845,7 +932,226 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
         {/* ── TAB 2: INSERT (Add Question Types & Exam Sections) ── */}
         {activeTab === 'insert' && (
           <div className="flex items-center gap-2 flex-wrap">
-            {isArabic2ndPaper ? (
+            {isAlimQuranPaper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500 font-serif">
+                  আলিম আল কুরআন মাজিদ (কোড: ২০১):
+                </span>
+
+                {onOpenAlimQuranModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenAlimQuranModal}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-800 to-teal-700 hover:from-emerald-900 hover:to-teal-800 text-white rounded-xl font-bold transition shadow-xs"
+                    title="القرآن المجيد — مجموعة (أ) ৯০ + مجموعة (ب) ১০"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {alimQuranCount > 0
+                        ? 'القرآن المجيد প্রশ্নাবলি (এডিট)'
+                        : '+ القرآن المجيد — مجموعة (أ) ও (ب) (১০০ নম্বর)'}
+                    </span>
+                    {alimQuranCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {alimQuranCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ ফাঁকা স্পেসার</span>
+                </button>
+              </>
+            ) : isDakhilQuranPaper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">
+                  কুরআন মাজিদ ও তাজবীদ (দাখিল — কোড: ১০১):
+                </span>
+
+                {onOpenBanglaMcqModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenBanglaMcqModal}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl font-bold transition shadow-xs"
+                    title="বহুনির্বাচনি অভীক্ষা (MCQ - ৪০ নম্বর)"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-indigo-200" />
+                    <span>
+                      {banglaMcqCount > 0
+                        ? 'বহুনির্বাচনি (MCQ ৪০ - এডিট)'
+                        : '+ বহুনির্বাচনি (MCQ - ৪০ নম্বর)'}
+                    </span>
+                    {banglaMcqCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {banglaMcqCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {onOpenDakhilQuranWrittenModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenDakhilQuranWrittenModal}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold transition shadow-xs"
+                    title="রচনামূলক (খ, গ ও ঘ বিভাগ - ৬০ নম্বর)"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-emerald-200" />
+                    <span>
+                      {dakhilQuranWrittenCount > 0
+                        ? 'রচনামূলক (খ–ঘ বিভাগ - এডিট)'
+                        : '+ রচনামূলক (খ–ঘ বিভাগ : ৬০ নম্বর)'}
+                    </span>
+                    {dakhilQuranWrittenCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {dakhilQuranWrittenCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ ফাঁকা স্পেসার</span>
+                </button>
+              </>
+            ) : isAlimFiqhPaper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">
+                  {isAlimFiqh2ndPaper ? 'আল ফিকহ ২য় পত্র (আলিম - ২০৪):' : 'আল ফিকহ ১ম পত্র (আলিম - ২০৩):'}
+                </span>
+
+                {onOpenAlimFiqhModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenAlimFiqhModal}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800 text-white rounded-xl font-bold transition shadow-xs"
+                    title="আলিম ফিকহ প্রশ্নাবলি (আরবি + ঐচ্ছিক বাংলা অনুবাদ) তৈরি বা এডিট করুন"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {alimFiqhCount > 0
+                        ? isAlimFiqh2ndPaper
+                          ? 'আল ফিকহ ২য় পত্র প্রশ্নাবলি (এডিট)'
+                          : 'আল ফিকহ ১ম পত্র প্রশ্নাবলি (এডিট)'
+                        : isAlimFiqh2ndPaper
+                        ? '+ আল ফিকহ ২য় পত্র (উসূলুল ফিকহ ও ফারায়িয - ১০০)'
+                        : '+ আল ফিকহ ১ম পত্র প্রশ্নাবলি (১০০ নম্বর)'}
+                    </span>
+                    {alimFiqhCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {alimFiqhCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ ফাঁকা স্পেসার</span>
+                </button>
+              </>
+            ) : isAlimArabic2ndPaper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500 font-serif">
+                  আলিম আরবি ২য় পত্র (কোড: ২০৬):
+                </span>
+
+                {onOpenAlimAr2QawaidModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenAlimAr2QawaidModal}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold transition shadow-2xs font-serif"
+                    title="(أ) القواعد (১–১০ নং প্রশ্ন : ৩৫ নম্বর)"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-emerald-200" />
+                    <span>
+                      {alimAr2QawaidCount > 0
+                        ? '(أ) القواعد (এডিট / নতুন)'
+                        : '+ (أ) القواعد (১–১০ নং : ৩৫)'}
+                    </span>
+                    {alimAr2QawaidCount > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/40 border border-emerald-300/50 rounded-md font-sans">
+                        {alimAr2QawaidCount}টি
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {onOpenIkhtibarModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenIkhtibarModal}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold transition shadow-2xs font-serif"
+                    title="(ب) اختبار القواعد (১১ নং প্রশ্ন : ১৫ নম্বর)"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-teal-200" />
+                    <span>
+                      {(ikhtibarCount || 0) > 0
+                        ? '(ب) اختبار القواعد (এডিট)'
+                        : '+ (ب) اختبار القواعد (১১ নং : ১৫)'}
+                    </span>
+                    {(ikhtibarCount || 0) > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.2 bg-teal-500/40 border border-teal-300/50 rounded-md font-sans">
+                        {ikhtibarCount}টি
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {onOpenAlimAr2TarjamaModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenAlimAr2TarjamaModal}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-bold transition shadow-2xs font-serif"
+                    title="(ج) الترجمة والإنشاء (১২–১৬ নং প্রশ্ন : ৫০ নম্বর)"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-blue-200" />
+                    <span>
+                      {alimAr2TarjamaCount > 0
+                        ? '(ج) الترجمة والإنشاء (এডিট)'
+                        : '+ (ج) الترجمة والإنشاء (১২–১৬ নং : ৫০)'}
+                    </span>
+                    {alimAr2TarjamaCount > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.2 bg-blue-500/40 border border-blue-300/50 rounded-md font-sans">
+                        {alimAr2TarjamaCount}টি
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ ফাঁকা স্পেসার</span>
+                </button>
+              </>
+            ) : isArabic2ndPaper ? (
               <>
                 <span className="text-[11px] font-bold text-slate-500 font-serif">قواعد اللغة (প্রশ্ন যোগ করুন):</span>
 
@@ -1321,6 +1627,114 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
                 >
                   <FolderPlus className="w-3.5 h-3.5" />
                   <span>+ নতুন বিভাগ (Section)</span>
+                </button>
+              </>
+            ) : isDakhilAqaidFiqhPaper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">আকাইদ ও ফিকহ (৬ষ্ঠ–১০ম / দাখিল):</span>
+
+                {onOpenBanglaMcqModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenBanglaMcqModal}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl font-bold transition shadow-xs"
+                    title="আকাইদ ও ফিকহ — ৪০টি বহুনির্বাচনি প্রশ্ন (সাধারণ, বহুপদী ও উদ্দীপক গুচ্ছ)"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {banglaMcqCount > 0
+                        ? 'বহুনির্বাচনি অভীক্ষা (এডিট / নতুন)'
+                        : '+ বহুনির্বাচনি অভীক্ষা (MCQ - ৪০)'}
+                    </span>
+                    {banglaMcqCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {banglaMcqCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                {onOpenAqaidFiqhWrittenModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenAqaidFiqhWrittenModal}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold transition shadow-xs"
+                    title="আকাইদ ও ফিকহ — খ থেকে চ বিভাগ রচনামূলক প্রশ্ন (৬০ নম্বর)"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {aqaidFiqhWrittenCount > 0
+                        ? 'রচনামূলক খ–চ বিভাগ (এডিট / নতুন)'
+                        : '+ রচনামূলক প্রশ্ন (খ–চ বিভাগ : ৬০)'}
+                    </span>
+                    {aqaidFiqhWrittenCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {aqaidFiqhWrittenCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ ফাঁকা স্পেসার</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onInsertSection}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition shadow-2xs"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span>+ নতুন বিভাগ (Section)</span>
+                </button>
+              </>
+            ) : isAlimFiqhPaper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">
+                  {isAlimFiqh2ndPaper ? 'আল ফিকহ ২য় পত্র (আলিম - ২০৪):' : 'আল ফিকহ ১ম পত্র (আলিম - ২০৩):'}
+                </span>
+
+                {onOpenAlimFiqhModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenAlimFiqhModal}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800 text-white rounded-xl font-bold transition shadow-xs"
+                    title="আলিম ফিকহ প্রশ্নাবলি (আরবি + ঐচ্ছিক বাংলা অনুবাদ) তৈরি বা এডিট করুন"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                    <span>
+                      {alimFiqhCount > 0
+                        ? isAlimFiqh2ndPaper
+                          ? 'আল ফিকহ ২য় পত্র প্রশ্নাবলি (এডিট)'
+                          : 'আল ফিকহ ১ম পত্র প্রশ্নাবলি (এডিট)'
+                        : isAlimFiqh2ndPaper
+                        ? '+ আল ফিকহ ২য় পত্র (উসূলুল ফিকহ ও ফারায়িয - ১০০)'
+                        : '+ আল ফিকহ ১ম পত্র প্রশ্নাবলি (১০০ নম্বর)'}
+                    </span>
+                    {alimFiqhCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-white/25 text-white text-[10px] font-extrabold">
+                        {alimFiqhCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-300 mx-1 hidden sm:block" />
+
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ ফাঁকা স্পেসার</span>
                 </button>
               </>
             ) : (
