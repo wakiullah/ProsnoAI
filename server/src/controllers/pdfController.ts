@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import zlib from 'zlib';
 import { ExamPaperData } from 'proshno-shared';
 import {
   generateAnswerKeyPdf,
@@ -9,6 +10,23 @@ import {
 import { generateQuestionPaperHtml } from './../services/pdfTemplates/questionPaperTemplate';
 import { generateAnswerKeyHtml } from './../services/pdfTemplates/answerKeyTemplate';
 import { generateOmrSheetHtml } from './../services/pdfTemplates/omrSheetTemplate';
+
+function sendCompressedPdf(req: Request, res: Response, pdfBuffer: Buffer, filename: string) {
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
+  res.setHeader('Vary', 'Accept-Encoding');
+
+  const acceptEncoding = String(req.headers['accept-encoding'] || '');
+  if (acceptEncoding.includes('gzip') && pdfBuffer.length > 1024) {
+    const gzipped = zlib.gzipSync(pdfBuffer, { level: 6 });
+    res.setHeader('Content-Encoding', 'gzip');
+    res.setHeader('Content-Length', gzipped.length);
+    return res.end(gzipped);
+  }
+
+  res.setHeader('Content-Length', pdfBuffer.length);
+  return res.end(pdfBuffer);
+}
 
 export async function handleGenerateQuestionPaperPdf(req: Request, res: Response) {
   try {
@@ -35,10 +53,7 @@ export async function handleGenerateQuestionPaperPdf(req: Request, res: Response
     const safeTitle = (paper?.headerConfig?.subject || 'Question_Paper').replace(/[^a-zA-Z0-9_\u0980-\u09FF]/g, '_');
     const filename = `${safeTitle}_${setName || 'Set_A'}.pdf`;
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
-    res.setHeader('Content-Length', pdfBuffer.length);
-    return res.end(pdfBuffer);
+    return sendCompressedPdf(req, res, pdfBuffer, filename);
   } catch (err: any) {
     console.error('Error rendering Question Paper PDF:', err);
     return res.status(500).json({ success: false, error: err.message });
@@ -55,10 +70,7 @@ export async function handleGenerateAnswerKeyPdf(req: Request, res: Response) {
     const pdfBuffer = await generateAnswerKeyPdf(paper, setName);
     const filename = `Answer_Key_${setName || 'Set_A'}.pdf`;
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
-    res.setHeader('Content-Length', pdfBuffer.length);
-    return res.end(pdfBuffer);
+    return sendCompressedPdf(req, res, pdfBuffer, filename);
   } catch (err: any) {
     console.error('Error rendering Answer Key PDF:', err);
     return res.status(500).json({ success: false, error: err.message });
@@ -75,10 +87,7 @@ export async function handleGenerateOmrSheetPdf(req: Request, res: Response) {
     const pdfBuffer = await generateOmrSheetPdf(paper, totalMcqs);
     const filename = `OMR_Sheet_${paper.headerConfig?.subject || 'Exam'}.pdf`;
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
-    res.setHeader('Content-Length', pdfBuffer.length);
-    return res.end(pdfBuffer);
+    return sendCompressedPdf(req, res, pdfBuffer, filename);
   } catch (err: any) {
     console.error('Error rendering OMR Sheet PDF:', err);
     return res.status(500).json({ success: false, error: err.message });

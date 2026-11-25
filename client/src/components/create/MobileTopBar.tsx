@@ -15,7 +15,6 @@ import {
   Database,
   Key,
   FileText,
-  Share,
 } from 'lucide-react';
 import { InstitutionHeaderConfig } from 'proshno-shared';
 
@@ -95,7 +94,7 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
           </button>
         </div>
 
-        {/* Right: More (...) + Download + Setup Wizard / Export */}
+        {/* Right: More (...) + Download */}
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -115,16 +114,6 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
             title="PDF ডাউনলোড করুন"
           >
             <Download className="w-5 h-5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpenSetupWizard}
-            className="p-2 rounded-xl hover:bg-white/15 active:bg-white/25 active:scale-95 transition"
-            aria-label="নতুন প্রশ্নপত্র উইজার্ড"
-            title="নতুন প্রশ্নপত্র উইজার্ড"
-          >
-            <Share className="w-5 h-5" />
           </button>
         </div>
       </header>

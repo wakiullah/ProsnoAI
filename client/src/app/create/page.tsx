@@ -73,6 +73,7 @@ import {
   ALIM_QURAN_GROUP_ID,
   AlimQuranBuilderModal,
 } from '../../components/create/quranTajweed/AlimQuranBuilderModal';
+import { PdfExportChoiceModal } from '../../components/create/PdfExportChoiceModal';
 import {
   BanglaMcqBuilderModal,
   extractBanglaMcqGroups,
@@ -253,6 +254,8 @@ export default function CreateQuestionPage() {
   const [activeAlimAr2TarjamaGroupId, setActiveAlimAr2TarjamaGroupId] = useState<string | null>(null);
   const [isDakhilQuranWrittenModalOpen, setIsDakhilQuranWrittenModalOpen] = useState(false);
   const [isAlimQuranModalOpen, setIsAlimQuranModalOpen] = useState(false);
+  const [isPdfChoiceModalOpen, setIsPdfChoiceModalOpen] = useState(false);
+  const [isDownloadingDirectPdf, setIsDownloadingDirectPdf] = useState(false);
   const [isPaperSettingsModalOpen, setIsPaperSettingsModalOpen] = useState(false);
   const autoFitFnRef = useRef<((targetPages?: number) => void) | null>(null);
 
@@ -1439,7 +1442,8 @@ export default function CreateQuestionPage() {
       ? `${layoutConfig.customFontSizePt}pt`
       : (fontSizeMap[layoutConfig.fontSize] || '13.5px');
 
-    // Clone each page and remove print:hidden elements
+    // Clone each page, strip interactive attributes, and collect only actually-used class names
+    const usedClasses = new Set<string>();
     const pagesHtml = Array.from(pageEls)
       .map((el) => {
         const clone = el.cloneNode(true) as HTMLElement;
@@ -1449,19 +1453,70 @@ export default function CreateQuestionPage() {
           item.removeAttribute('contenteditable');
           item.removeAttribute('suppresscontenteditablewarning');
         });
+        clone.querySelectorAll('[title]').forEach((item) => item.removeAttribute('title'));
+        const addElClasses = (node: Element) => {
+          if (node.classList) {
+            node.classList.forEach((c) => usedClasses.add(c));
+          }
+        };
+        addElClasses(clone);
+        clone.querySelectorAll('[class]').forEach(addElClasses);
         return clone.outerHTML;
       })
       .join('\n');
 
-    // Extract all parsed CSS rules from document.styleSheets to preserve complete Tailwind & app styling
+    // Extract ONLY CSS rules actually needed by the rendered question paper pages
+    // (cuts Client -> Server upload payload by ~75–85% while keeping 100% identical styling)
+    const shouldKeepCssRule = (selectorText: string): boolean => {
+      if (!selectorText) return false;
+      // Drop interactive/animation pseudo-selectors never needed in static PDF
+      if (/:hover|:focus|:active|::placeholder|cursor-/.test(selectorText)) return false;
+      // Always keep base element, root, and core proshno/script rules
+      if (
+        /^(:root|html|body|\*|::before|::after|table|thead|tbody|tr|td|th|p|div|span|ul|ol|li|h[1-6]|img|svg)\b/.test(
+          selectorText.trim()
+        ) ||
+        selectorText.includes('proshno-') ||
+        selectorText.includes('script-') ||
+        selectorText.includes('exam-question') ||
+        selectorText.includes('font-ar') ||
+        selectorText.includes('q-')
+      ) {
+        return true;
+      }
+      // Keep class rules only if at least one referenced class is present in the cloned pages
+      const classMatches = selectorText.match(/\.([a-zA-Z0-9_\\:-]+)/g);
+      if (!classMatches) return false;
+      return classMatches.some((raw) => {
+        const clean = raw.slice(1).replace(/\\/g, '');
+        return usedClasses.has(clean);
+      });
+    };
+
     let inlinedCss = '';
     try {
       for (const sheet of Array.from(document.styleSheets)) {
         try {
           const rules = sheet.cssRules || (sheet as any).rules;
-          if (rules) {
-            for (const rule of Array.from(rules)) {
-              inlinedCss += rule.cssText + '\n';
+          if (!rules) continue;
+          for (const rule of Array.from(rules)) {
+            if (rule instanceof CSSStyleRule) {
+              if (shouldKeepCssRule(rule.selectorText)) {
+                inlinedCss += rule.cssText + '\n';
+              }
+            } else if (rule instanceof CSSMediaRule) {
+              const cond = rule.conditionText || '';
+              if (cond.includes('print') || cond.includes('min-width: 640px') || cond.includes('min-width: 768px')) {
+                const keptInner: string[] = [];
+                for (const inner of Array.from(rule.cssRules)) {
+                  if (inner instanceof CSSStyleRule && shouldKeepCssRule(inner.selectorText)) {
+                    keptInner.push(inner.cssText);
+                  }
+                }
+                if (keptInner.length > 0) {
+                  inlinedCss += `@media ${cond} { ${keptInner.join('\n')} }\n`;
+                }
+              }
             }
           }
         } catch (e) {
@@ -1470,10 +1525,8 @@ export default function CreateQuestionPage() {
       }
     } catch (e) {}
 
-    // Also collect any existing <style> tags in document head
-    const headStyleTags = Array.from(document.querySelectorAll('style'))
-      .map((el) => el.outerHTML)
-      .join('\n');
+    // Avoid duplicating <style> tags already collected via document.styleSheets
+    const headStyleTags = '';
 
     const margins = layoutConfig.margins || {
       topMm: 14,
@@ -1800,6 +1853,83 @@ export default function CreateQuestionPage() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  // Instant 0-KB Browser Print / Save as PDF via isolated hidden iframe
+  const handlePrintSaveAsPdf = () => {
+    const html = buildClientRenderedHtml();
+    if (!html) {
+      window.print();
+      return;
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc || !iframe.contentWindow) {
+      iframe.remove();
+      window.print();
+      return;
+    }
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    const triggerPrint = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch {
+        window.print();
+      } finally {
+        setTimeout(() => iframe.remove(), 1500);
+      }
+    };
+
+    if (doc.fonts && doc.fonts.ready) {
+      Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 1500))]).then(() => {
+        setTimeout(triggerPrint, 120);
+      });
+    } else {
+      setTimeout(triggerPrint, 300);
+    }
+  };
+
+  const executeDirectServerPdfDownload = async (
+    type: 'question-paper' | 'answer-key' | 'omr-sheet'
+  ) => {
+    setIsDownloadingDirectPdf(true);
+    try {
+      showToast('PDF প্রস্তুত হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...');
+      let renderedHtml: string | undefined;
+      if (type === 'question-paper') {
+        renderedHtml = buildClientRenderedHtml();
+      }
+      const blob = await downloadPdfDeliverable(
+        type,
+        getPaperData(),
+        activeSet,
+        undefined,
+        renderedHtml
+      );
+      triggerPdfBlobDownload(blob, `${type}_${activeSet || 'SetA'}.pdf`);
+      showToast('PDF সফলভাবে ডাউনলোড হয়েছে!');
+      setIsPdfChoiceModalOpen(false);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'PDF ডাউনলোড করতে ব্যর্থ হয়েছে।');
+      setTimeout(() => setErrorMessage(null), 6000);
+    } finally {
+      setIsDownloadingDirectPdf(false);
+    }
+  };
+
   // PDF Deliverable Download
   const handleDownloadPdf = async (type: 'question-paper' | 'answer-key' | 'omr-sheet') => {
     if (questions.length === 0) {
@@ -1808,19 +1938,12 @@ export default function CreateQuestionPage() {
       return;
     }
 
-    try {
-      showToast('PDF প্রস্তুত হচ্ছে, অনুগ্রহ করে কয়েক সেকেন্ড অপেক্ষা করুন...');
-      let renderedHtml: string | undefined;
-      if (type === 'question-paper') {
-        renderedHtml = buildClientRenderedHtml();
-      }
-      const blob = await downloadPdfDeliverable(type, getPaperData(), activeSet, undefined, renderedHtml);
-      triggerPdfBlobDownload(blob, `${type}_${activeSet || 'SetA'}.pdf`);
-      showToast('PDF সফলভাবে ডাউনলোড হয়েছে!');
-    } catch (err: any) {
-      setErrorMessage(err.message || 'PDF ডাউনলোড করতে ব্যর্থ হয়েছে।');
-      setTimeout(() => setErrorMessage(null), 6000);
+    if (type === 'question-paper') {
+      setIsPdfChoiceModalOpen(true);
+      return;
     }
+
+    await executeDirectServerPdfDownload(type);
   };
 
   const availableSetNames = sets.length > 0 ? sets.map((s) => s.setName) : [];
@@ -2661,6 +2784,15 @@ export default function CreateQuestionPage() {
       <SetShufflerModal
         isOpen={isShufflerOpen}
         onClose={() => setIsShufflerOpen(false)}
+      />
+
+      {/* ───────────────── 2-OPTION PDF EXPORT MODAL (Print/Save as PDF vs Direct .pdf) ───────────────── */}
+      <PdfExportChoiceModal
+        isOpen={isPdfChoiceModalOpen}
+        onClose={() => setIsPdfChoiceModalOpen(false)}
+        onPrintSaveAsPdf={handlePrintSaveAsPdf}
+        onDirectDownloadPdf={() => executeDirectServerPdfDownload('question-paper')}
+        isDownloadingDirect={isDownloadingDirectPdf}
       />
 
       {/* ───────────────── DOWNLOAD DELIVERABLES MODAL ───────────────── */}

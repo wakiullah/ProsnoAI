@@ -184,10 +184,24 @@ export async function downloadPdfDeliverable(
   totalMcqs?: number,
   html?: string
 ): Promise<Blob> {
+  // When pre-rendered WYSIWYG HTML is provided, omit the heavy questions array from `paper`
+  // so we don't send the same content twice over the network.
+  const payload =
+    html && html.trim().length > 0
+      ? {
+          html,
+          setName,
+          paper: {
+            headerConfig: { subject: paper.headerConfig?.subject },
+            layoutConfig: { paperSize: paper.layoutConfig?.paperSize },
+          },
+        }
+      : { paper, setName, totalMcqs };
+
   const res = await fetch(`${API_BASE_URL}/pdf/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ paper, setName, totalMcqs, html }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
