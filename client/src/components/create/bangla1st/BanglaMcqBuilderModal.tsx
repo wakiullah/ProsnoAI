@@ -77,8 +77,12 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
   onSave,
 }) => {
   const isAqaid = subject.includes('আকাইদ') || subject.includes('ফিকহ');
-  const effectiveTargetMarks = targetMarks || (isAqaid ? 40 : 30);
+  const isHadith = subject.includes('হাদিস') || subject.includes('হাদীস');
+  const effectiveTargetMarks = targetMarks || (isAqaid || isHadith ? 40 : 30);
   const targetMarksBn = toBengaliNumber(effectiveTargetMarks);
+  const defaultBannerTitle = isHadith
+    ? `ক বিভাগ — বহুনির্বাচনি প্রশ্ন (মান: ${targetMarksBn})`
+    : `বহুনির্বাচনি অভীক্ষা — পূর্ণমান: ${targetMarksBn}`;
   const activeGroup = useMemo(
     () => (activeGroupId ? allGroups.find((g) => g.groupId === activeGroupId) || null : null),
     [allGroups, activeGroupId]
@@ -86,7 +90,7 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
   const isEditMode = Boolean(activeGroup);
 
   const [includeSectionBanner, setIncludeSectionBanner] = useState(false);
-  const [bannerTitle, setBannerTitle] = useState('বহুনির্বাচনি অভীক্ষা — পূর্ণমান: ৩০');
+  const [bannerTitle, setBannerTitle] = useState(defaultBannerTitle);
   const [items, setItems] = useState<BanglaMcqItemConfig[]>(DEFAULT_BANGLA_MCQ_ITEMS);
 
   const listContainerRef = useRef<HTMLDivElement | null>(null);
@@ -119,7 +123,7 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
   useEffect(() => {
     if (!activeGroup) {
       setIncludeSectionBanner(false);
-      setBannerTitle('বহুনির্বাচনি অভীক্ষা — পূর্ণমান: ৩০');
+      setBannerTitle(defaultBannerTitle);
       setItems(DEFAULT_BANGLA_MCQ_ITEMS);
       return;
     }
@@ -130,7 +134,7 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
     );
     if (bannerQ) {
       setIncludeSectionBanner(true);
-      setBannerTitle(bannerQ.stemOrPassage || 'বহুনির্বাচনি অভীক্ষা — পূর্ণমান: ৩০');
+      setBannerTitle(bannerQ.stemOrPassage || defaultBannerTitle);
     } else {
       setIncludeSectionBanner(false);
     }
@@ -589,7 +593,9 @@ export const BanglaMcqBuilderModal: React.FC<BanglaMcqBuilderModalProps> = ({
               className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-700 hover:to-blue-800 text-white text-xs font-extrabold shadow-sm transition"
             >
               <span>
-                {isAqaid
+                {isHadith
+                  ? 'সেভ ও রচনামূলক (খ ও গ বিভাগ : ৬০) অংশে যান'
+                  : isAqaid
                   ? 'সেভ ও রচনামূলক (খ–চ বিভাগ : ৬০) অংশে যান'
                   : subject.includes('২য়') || subject.includes('২য়') || subject.includes('দ্বিতীয়')
                   ? 'সেভ ও রচনামূলক (নির্মিতি - ৭০) অংশে যান'

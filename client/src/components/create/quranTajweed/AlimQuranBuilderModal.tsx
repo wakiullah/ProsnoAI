@@ -20,11 +20,16 @@ const parseArNumber = (str?: string): number | null => {
 };
 
 export const ALIM_QURAN_GROUP_ID = 'alim_quran_group';
+export const ALIM_QURAN_A_GROUP_ID = 'alim_quran_a_group';
+export const ALIM_QURAN_B_GROUP_ID = 'alim_quran_b_group';
+export type AlimQuranSection = 'A' | 'B';
 
 export function extractAlimQuranGroups(existingQuestions: QuestionData[]): AlimQuranState {
   const relevant = existingQuestions.filter(
     (q) =>
       q.groupId === ALIM_QURAN_GROUP_ID ||
+      q.groupId === ALIM_QURAN_A_GROUP_ID ||
+      q.groupId === ALIM_QURAN_B_GROUP_ID ||
       q.groupRole === 'alim_quran_banner' ||
       q.groupRole === 'alim_quran_group_a_item' ||
       q.groupRole === 'alim_quran_group_b_item'
@@ -87,17 +92,18 @@ export function extractAlimQuranGroups(existingQuestions: QuestionData[]): AlimQ
 interface AlimQuranBuilderModalProps {
   isOpen: boolean;
   onClose: () => void;
+  section: AlimQuranSection;
   existingQuestions: QuestionData[];
-  onSave: (questions: QuestionData[]) => void;
+  onSave: (questions: QuestionData[], targetGroupId: string) => void;
 }
 
 export const AlimQuranBuilderModal: React.FC<AlimQuranBuilderModalProps> = ({
   isOpen,
   onClose,
+  section,
   existingQuestions,
   onSave,
 }) => {
-  const [activeTab, setActiveTab] = useState<'A' | 'B'>('A');
   const [state, setState] = useState<AlimQuranState>(() =>
     JSON.parse(JSON.stringify(DEFAULT_ALIM_QURAN_STATE))
   );
@@ -105,9 +111,8 @@ export const AlimQuranBuilderModal: React.FC<AlimQuranBuilderModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setState(extractAlimQuranGroups(existingQuestions));
-      setActiveTab('A');
     }
-  }, [isOpen, existingQuestions]);
+  }, [isOpen, existingQuestions, section]);
 
   if (!isOpen) return null;
 
@@ -130,63 +135,74 @@ export const AlimQuranBuilderModal: React.FC<AlimQuranBuilderModalProps> = ({
       sourceType: 'MANUAL' as const,
     };
 
-    // Group A Banner
-    out.push({
-      ...baseMeta,
-      _id: `${ALIM_QURAN_GROUP_ID}_banner_a`,
-      typology: 'SECTION_TITLE',
-      stemOrPassage: [state.groupATitle, state.groupAMarksLine, state.groupAInstruction]
-        .filter(Boolean)
-        .join('\n'),
-      marks: 0,
-      customMarksText: 'الدرجات',
-      groupId: ALIM_QURAN_GROUP_ID,
-      groupRole: 'alim_quran_banner',
-    });
+    const existingACount = existingQuestions.filter(
+      (q) => q.groupRole === 'alim_quran_group_a_item'
+    ).length;
 
-    // Group A Questions (1–8)
-    state.groupAItems.forEach((item) => {
-      const ayatMarks = item.ayatMarks || 9;
-      const subAMarks = item.subAMarks || 3;
-      const subBMarks = item.subBMarks || 3;
+    if (section === 'A') {
+      // Group A Banner
       out.push({
         ...baseMeta,
-        _id: item.id,
-        typology: 'CQ',
-        customNumber: `${toArabicDigits(qNum)}-`,
-        stemOrPassage: item.ayatText.trim(),
-        marks: ayatMarks + subAMarks + subBMarks,
-        customMarksText: toArabicDigits(ayatMarks),
-        groupId: ALIM_QURAN_GROUP_ID,
-        groupRole: 'alim_quran_group_a_item',
-        subQuestions: [
-          {
-            part: 'أ' as any,
-            bloomLevel: 'comprehension',
-            bloomTitle: '',
-            questionText: item.subAText.trim(),
-            marks: subAMarks,
-          },
-          {
-            part: 'ب' as any,
-            bloomLevel: 'knowledge',
-            bloomTitle: '',
-            questionText: item.subBText.trim(),
-            marks: subBMarks,
-          },
-        ],
+        _id: `${ALIM_QURAN_A_GROUP_ID}_banner_a`,
+        typology: 'SECTION_TITLE',
+        stemOrPassage: [state.groupATitle, state.groupAMarksLine, state.groupAInstruction]
+          .filter(Boolean)
+          .join('\n'),
+        marks: 0,
+        customMarksText: 'الدرجات',
+        groupId: ALIM_QURAN_A_GROUP_ID,
+        groupRole: 'alim_quran_banner',
       });
-      qNum++;
-    });
+
+      // Group A Questions (1–8)
+      state.groupAItems.forEach((item) => {
+        const ayatMarks = item.ayatMarks || 9;
+        const subAMarks = item.subAMarks || 3;
+        const subBMarks = item.subBMarks || 3;
+        out.push({
+          ...baseMeta,
+          _id: item.id,
+          typology: 'CQ',
+          customNumber: `${toArabicDigits(qNum)}-`,
+          stemOrPassage: item.ayatText.trim(),
+          marks: ayatMarks + subAMarks + subBMarks,
+          customMarksText: toArabicDigits(ayatMarks),
+          groupId: ALIM_QURAN_A_GROUP_ID,
+          groupRole: 'alim_quran_group_a_item',
+          subQuestions: [
+            {
+              part: 'أ' as any,
+              bloomLevel: 'comprehension',
+              bloomTitle: '',
+              questionText: item.subAText.trim(),
+              marks: subAMarks,
+            },
+            {
+              part: 'ب' as any,
+              bloomLevel: 'knowledge',
+              bloomTitle: '',
+              questionText: item.subBText.trim(),
+              marks: subBMarks,
+            },
+          ],
+        });
+        qNum++;
+      });
+
+      onSave(out, ALIM_QURAN_A_GROUP_ID);
+      onClose();
+      return;
+    }
 
     // Group B Banner
+    qNum = (existingACount > 0 ? existingACount : state.groupAItems.length) + 1;
     out.push({
       ...baseMeta,
-      _id: `${ALIM_QURAN_GROUP_ID}_banner_b`,
+      _id: `${ALIM_QURAN_B_GROUP_ID}_banner_b`,
       typology: 'SECTION_TITLE',
       stemOrPassage: [state.groupBTitle, state.groupBMarksLine].filter(Boolean).join('\n'),
       marks: 0,
-      groupId: ALIM_QURAN_GROUP_ID,
+      groupId: ALIM_QURAN_B_GROUP_ID,
       groupRole: 'alim_quran_banner',
     });
 
@@ -201,17 +217,20 @@ export const AlimQuranBuilderModal: React.FC<AlimQuranBuilderModalProps> = ({
         stemOrPassage: item.text.trim(),
         marks: m,
         customMarksText: toArabicDigits(m),
-        groupId: ALIM_QURAN_GROUP_ID,
+        groupId: ALIM_QURAN_B_GROUP_ID,
         groupRole: 'alim_quran_group_b_item',
       });
       qNum++;
     });
 
-    onSave(out);
+    onSave(out, ALIM_QURAN_B_GROUP_ID);
     onClose();
   };
 
-  const groupBStartNum = state.groupAItems.length + 1;
+  const existingACount = existingQuestions.filter(
+    (q) => q.groupRole === 'alim_quran_group_a_item'
+  ).length;
+  const groupBStartNum = (existingACount > 0 ? existingACount : state.groupAItems.length) + 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4">
@@ -222,10 +241,12 @@ export const AlimQuranBuilderModal: React.FC<AlimQuranBuilderModalProps> = ({
             <BookOpen className="w-5 h-5 text-emerald-200" />
             <div>
               <h2 className="text-sm sm:text-base font-extrabold leading-tight">
-                القرآن المجيد — আলিম আল কুরআন মাজিদ (কোড: ২০১, পূর্ণমান: ১০০)
+                {section === 'A'
+                  ? 'مجموعة ( أ ) — ৯০ নম্বর (আলিম কুরআন মাজিদ)'
+                  : 'مجموعة ( ب ) — ১০ নম্বর (আলিম কুরআন মাজিদ)'}
               </h2>
               <p className="text-[11px] text-emerald-100">
-                সম্পূর্ণ আরবি (RTL) · مجموعة ( أ ) [৯০ নম্বর] + مجموعة ( ب ) [১০ নম্বর]
+                القرآن المجيد (কোড: ২০১) · সম্পূর্ণ আরবি (RTL)
               </p>
             </div>
           </div>
@@ -238,35 +259,9 @@ export const AlimQuranBuilderModal: React.FC<AlimQuranBuilderModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveTab('A')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${
-              activeTab === 'A'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50'
-            }`}
-          >
-            مجموعة ( أ ) — ৯০ নম্বর (১–{state.groupAItems.length} নং)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('B')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition ${
-              activeTab === 'B'
-                ? 'bg-emerald-800 text-white shadow-xs'
-                : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50'
-            }`}
-          >
-            مجموعة ( ب ) — ১০ নম্বর ({groupBStartNum}–{groupBStartNum + state.groupBItems.length - 1} নং)
-          </button>
-        </div>
-
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-          {activeTab === 'A' && (
+          {section === 'A' && (
             <>
               <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
@@ -413,7 +408,7 @@ export const AlimQuranBuilderModal: React.FC<AlimQuranBuilderModalProps> = ({
             </>
           )}
 
-          {activeTab === 'B' && (
+          {section === 'B' && (
             <div className="space-y-3.5">
               <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
@@ -509,26 +504,7 @@ export const AlimQuranBuilderModal: React.FC<AlimQuranBuilderModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0">
-          <div>
-            {activeTab === 'A' ? (
-              <button
-                type="button"
-                onClick={() => setActiveTab('B')}
-                className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-bold hover:bg-emerald-100"
-              >
-                পরবর্তী: مجموعة ( ب ) →
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setActiveTab('A')}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-100"
-              >
-                ← مجموعة ( أ )
-              </button>
-            )}
-          </div>
+        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <button
               type="button"

@@ -22,11 +22,18 @@ const parseBnNumber = (str?: string): number | null => {
 };
 
 export const DAKHIL_QURAN_WRITTEN_GROUP_ID = 'dakhil_quran_written_group';
+export const DAKHIL_QURAN_KHA_GROUP_ID = 'dakhil_quran_kha_group';
+export const DAKHIL_QURAN_GA_GROUP_ID = 'dakhil_quran_ga_group';
+export const DAKHIL_QURAN_GHA_GROUP_ID = 'dakhil_quran_gha_group';
+export type DakhilQuranSection = 'kha' | 'ga' | 'gha';
 
 export function extractDakhilQuranWrittenGroups(existingQuestions: QuestionData[]): DakhilQuranWrittenState {
   const relevant = existingQuestions.filter(
     (q) =>
       q.groupId === DAKHIL_QURAN_WRITTEN_GROUP_ID ||
+      q.groupId === DAKHIL_QURAN_KHA_GROUP_ID ||
+      q.groupId === DAKHIL_QURAN_GA_GROUP_ID ||
+      q.groupId === DAKHIL_QURAN_GHA_GROUP_ID ||
       q.groupRole === 'quran_section_banner' ||
       q.groupRole === 'quran_surah_header' ||
       q.groupRole === 'quran_ayat_item' ||
@@ -139,17 +146,18 @@ export function extractDakhilQuranWrittenGroups(existingQuestions: QuestionData[
 interface QuranTajweedWrittenModalProps {
   isOpen: boolean;
   onClose: () => void;
+  section: DakhilQuranSection;
   existingQuestions: QuestionData[];
-  onSave: (questions: QuestionData[]) => void;
+  onSave: (questions: QuestionData[], targetGroupId: string) => void;
 }
 
 export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> = ({
   isOpen,
   onClose,
+  section,
   existingQuestions,
   onSave,
 }) => {
-  const [activeTab, setActiveTab] = useState<'kha' | 'ga' | 'gha'>('kha');
   const [state, setState] = useState<DakhilQuranWrittenState>(() =>
     JSON.parse(JSON.stringify(DEFAULT_DAKHIL_QURAN_WRITTEN))
   );
@@ -157,15 +165,21 @@ export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> =
   useEffect(() => {
     if (isOpen) {
       setState(extractDakhilQuranWrittenGroups(existingQuestions));
-      setActiveTab('kha');
     }
-  }, [isOpen, existingQuestions]);
+  }, [isOpen, existingQuestions, section]);
 
   if (!isOpen) return null;
 
-  const totalKhaQuestions = state.surahGroups.reduce((acc, sg) => acc + sg.questions.length, 0);
+  const existingKhaCount = existingQuestions.filter((q) => q.groupRole === 'quran_ayat_item').length;
+  const totalKhaQuestions =
+    existingKhaCount > 0
+      ? existingKhaCount
+      : state.surahGroups.reduce((acc, sg) => acc + sg.questions.length, 0);
+  const existingGaCount = existingQuestions.filter(
+    (q) => q.groupRole === 'quran_short_item' && !(q._id || '').includes('_gha')
+  ).length;
   const gaStartNum = state.startNumber + totalKhaQuestions;
-  const ghaStartNum = gaStartNum + state.gaQuestions.length;
+  const ghaStartNum = gaStartNum + (existingGaCount > 0 ? existingGaCount : state.gaQuestions.length);
 
   const updateSurahName = (surahIdx: number, name: string) => {
     setState((prev) => ({
@@ -285,104 +299,118 @@ export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> =
       sourceType: 'MANUAL' as const,
     };
 
-    // 1. খ বিভাগ — কুরআন মাজিদ (৪০)
-    out.push({
-      ...baseMeta,
-      _id: `${DAKHIL_QURAN_WRITTEN_GROUP_ID}_banner_kha`,
-      typology: 'SECTION_TITLE',
-      stemOrPassage: [state.khaTitle, state.khaInstruction, state.khaMarksLine].join('\n'),
-      marks: 0,
-      customMarksText: 'নম্বর',
-      groupId: DAKHIL_QURAN_WRITTEN_GROUP_ID,
-      groupRole: 'quran_section_banner',
-    });
+    if (section === 'kha') {
+      // 1. খ বিভাগ — কুরআন মাজিদ (৪০)
+      out.push({
+        ...baseMeta,
+        _id: `${DAKHIL_QURAN_KHA_GROUP_ID}_banner_kha`,
+        typology: 'SECTION_TITLE',
+        stemOrPassage: [state.khaTitle, state.khaInstruction, state.khaMarksLine].join('\n'),
+        marks: 0,
+        customMarksText: 'নম্বর',
+        groupId: DAKHIL_QURAN_KHA_GROUP_ID,
+        groupRole: 'quran_section_banner',
+      });
 
-    state.surahGroups.forEach((sg, sIdx) => {
-      if (sg.surahName.trim()) {
-        out.push({
-          ...baseMeta,
-          _id: sg.id || `${DAKHIL_QURAN_WRITTEN_GROUP_ID}_surah_${sIdx}`,
-          typology: 'GROUP_TITLE',
-          stemOrPassage: sg.surahName.trim(),
-          marks: 0,
-          groupId: DAKHIL_QURAN_WRITTEN_GROUP_ID,
-          groupRole: 'quran_surah_header',
+      state.surahGroups.forEach((sg, sIdx) => {
+        if (sg.surahName.trim()) {
+          out.push({
+            ...baseMeta,
+            _id: sg.id || `${DAKHIL_QURAN_KHA_GROUP_ID}_surah_${sIdx}`,
+            typology: 'GROUP_TITLE',
+            stemOrPassage: sg.surahName.trim(),
+            marks: 0,
+            groupId: DAKHIL_QURAN_KHA_GROUP_ID,
+            groupRole: 'quran_surah_header',
+          });
+        }
+
+        sg.questions.forEach((item) => {
+          const totalQMarks = (item.kaMarks || 5) + (item.khaMarks || 3) + (item.gaMarks || 2);
+          out.push({
+            ...baseMeta,
+            _id: item.id,
+            typology: 'CQ',
+            customNumber: `${toBanglaDigits(qNum)}।`,
+            stemOrPassage: item.kaAyat.trim(),
+            marks: totalQMarks,
+            groupId: DAKHIL_QURAN_KHA_GROUP_ID,
+            groupRole: 'quran_ayat_item',
+            subQuestions: [
+              {
+                part: 'ক',
+                bloomLevel: 'comprehension',
+                bloomTitle: item.kaInstruction,
+                questionText: item.kaAyat.trim(),
+                marks: item.kaMarks || 5,
+              },
+              {
+                part: 'খ',
+                bloomLevel: 'application',
+                bloomTitle: item.khaArabicLine.trim(),
+                questionText: item.khaText.trim(),
+                marks: item.khaMarks || 3,
+              },
+              {
+                part: 'গ',
+                bloomLevel: 'knowledge',
+                bloomTitle: item.gaInstruction,
+                questionText: item.gaWords.trim(),
+                marks: item.gaMarks || 2,
+              },
+            ],
+          });
+          qNum++;
         });
-      }
+      });
 
-      sg.questions.forEach((item) => {
-        const totalQMarks = (item.kaMarks || 5) + (item.khaMarks || 3) + (item.gaMarks || 2);
+      onSave(out, DAKHIL_QURAN_KHA_GROUP_ID);
+      onClose();
+      return;
+    }
+
+    if (section === 'ga') {
+      // 2. গ বিভাগ — নির্বাচিত বিষয়সমূহ (১০)
+      qNum = gaStartNum;
+      out.push({
+        ...baseMeta,
+        _id: `${DAKHIL_QURAN_GA_GROUP_ID}_banner_ga`,
+        typology: 'SECTION_TITLE',
+        stemOrPassage: [state.gaTitle, state.gaInstruction, state.gaMarksLine].join('\n'),
+        marks: 0,
+        groupId: DAKHIL_QURAN_GA_GROUP_ID,
+        groupRole: 'quran_section_banner',
+      });
+
+      state.gaQuestions.forEach((item, idx) => {
         out.push({
           ...baseMeta,
-          _id: item.id,
-          typology: 'CQ',
+          _id: item.id.includes('_ga') ? item.id : `dq_ga_${idx}_${Date.now()}`,
+          typology: 'DESCRIPTIVE',
           customNumber: `${toBanglaDigits(qNum)}।`,
-          stemOrPassage: item.kaAyat.trim(),
-          marks: totalQMarks,
-          groupId: DAKHIL_QURAN_WRITTEN_GROUP_ID,
-          groupRole: 'quran_ayat_item',
-          subQuestions: [
-            {
-              part: 'ক',
-              bloomLevel: 'comprehension',
-              bloomTitle: item.kaInstruction,
-              questionText: item.kaAyat.trim(),
-              marks: item.kaMarks || 5,
-            },
-            {
-              part: 'খ',
-              bloomLevel: 'application',
-              bloomTitle: item.khaArabicLine.trim(),
-              questionText: item.khaText.trim(),
-              marks: item.khaMarks || 3,
-            },
-            {
-              part: 'গ',
-              bloomLevel: 'knowledge',
-              bloomTitle: item.gaInstruction,
-              questionText: item.gaWords.trim(),
-              marks: item.gaMarks || 2,
-            },
-          ],
+          stemOrPassage: item.text.trim(),
+          marks: item.marks || 5,
+          customMarksText: toBanglaDigits(item.marks || 5),
+          groupId: DAKHIL_QURAN_GA_GROUP_ID,
+          groupRole: 'quran_short_item',
         });
         qNum++;
       });
-    });
 
-    // 2. গ বিভাগ — নির্বাচিত বিষয়সমূহ (১০)
-    out.push({
-      ...baseMeta,
-      _id: `${DAKHIL_QURAN_WRITTEN_GROUP_ID}_banner_ga`,
-      typology: 'SECTION_TITLE',
-      stemOrPassage: [state.gaTitle, state.gaInstruction, state.gaMarksLine].join('\n'),
-      marks: 0,
-      groupId: DAKHIL_QURAN_WRITTEN_GROUP_ID,
-      groupRole: 'quran_section_banner',
-    });
-
-    state.gaQuestions.forEach((item, idx) => {
-      out.push({
-        ...baseMeta,
-        _id: item.id.includes('_ga') ? item.id : `dq_ga_${idx}_${Date.now()}`,
-        typology: 'DESCRIPTIVE',
-        customNumber: `${toBanglaDigits(qNum)}।`,
-        stemOrPassage: item.text.trim(),
-        marks: item.marks || 5,
-        customMarksText: toBanglaDigits(item.marks || 5),
-        groupId: DAKHIL_QURAN_WRITTEN_GROUP_ID,
-        groupRole: 'quran_short_item',
-      });
-      qNum++;
-    });
+      onSave(out, DAKHIL_QURAN_GA_GROUP_ID);
+      onClose();
+      return;
+    }
 
     // 3. ঘ বিভাগ — তাজভিদ (১০)
+    qNum = ghaStartNum;
     out.push({
       ...baseMeta,
-      _id: `${DAKHIL_QURAN_WRITTEN_GROUP_ID}_banner_gha`,
+      _id: `${DAKHIL_QURAN_GHA_GROUP_ID}_banner_gha`,
       typology: 'SECTION_TITLE',
       stemOrPassage: [state.ghaTitle, state.ghaInstruction, state.ghaMarksLine].join('\n'),
       marks: 0,
-      groupId: DAKHIL_QURAN_WRITTEN_GROUP_ID,
+      groupId: DAKHIL_QURAN_GHA_GROUP_ID,
       groupRole: 'quran_section_banner',
     });
 
@@ -395,13 +423,13 @@ export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> =
         stemOrPassage: item.text.trim(),
         marks: item.marks || 5,
         customMarksText: toBanglaDigits(item.marks || 5),
-        groupId: DAKHIL_QURAN_WRITTEN_GROUP_ID,
+        groupId: DAKHIL_QURAN_GHA_GROUP_ID,
         groupRole: 'quran_short_item',
       });
       qNum++;
     });
 
-    onSave(out);
+    onSave(out, DAKHIL_QURAN_GHA_GROUP_ID);
     onClose();
   };
 
@@ -416,10 +444,14 @@ export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> =
             <BookOpen className="w-5 h-5 text-emerald-200" />
             <div>
               <h2 className="text-sm sm:text-base font-extrabold leading-tight">
-                আল কুরআন মাজিদ ও তাজবীদ — রচনামূলক অংশ (৬০ নম্বর)
+                {section === 'kha'
+                  ? 'খ বিভাগ — কুরআন মাজিদ (৪০ নম্বর)'
+                  : section === 'ga'
+                  ? 'গ বিভাগ — নির্বাচিত বিষয়সমূহ (১০ নম্বর)'
+                  : 'ঘ বিভাগ — তাজভিদ (১০ নম্বর)'}
               </h2>
               <p className="text-[11px] text-emerald-100">
-                দাখিল ৬ষ্ঠ–১০ম শ্রেণি · খ বিভাগ (৪০) + গ বিভাগ (১০) + ঘ বিভাগ (১০)
+                দাখিল ৯ম–১০ম শ্রেণি · আল কুরআন মাজিদ ও তাজবীদ (কোড: ১০১)
               </p>
             </div>
           </div>
@@ -432,31 +464,9 @@ export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> =
           </button>
         </div>
 
-        {/* Section Tabs */}
-        <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2 overflow-x-auto shrink-0">
-          {[
-            { id: 'kha' as const, label: 'খ বিভাগ — কুরআন মাজিদ (৪০)' },
-            { id: 'ga' as const, label: 'গ বিভাগ — নির্বাচিত বিষয়সমূহ (১০)' },
-            { id: 'gha' as const, label: 'ঘ বিভাগ — তাজভিদ (১০)' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition ${
-                activeTab === tab.id
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-emerald-50'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-          {activeTab === 'kha' && (
+          {section === 'kha' && (
             <>
               <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 space-y-2.5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -678,7 +688,7 @@ export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> =
             </>
           )}
 
-          {activeTab === 'ga' && (
+          {section === 'ga' && (
             <div className="space-y-3.5">
               <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
@@ -774,7 +784,7 @@ export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> =
             </div>
           )}
 
-          {activeTab === 'gha' && (
+          {section === 'gha' && (
             <div className="space-y-3.5">
               <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
@@ -872,27 +882,7 @@ export const QuranTajweedWrittenModal: React.FC<QuranTajweedWrittenModalProps> =
         </div>
 
         {/* Footer */}
-        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 text-xs text-slate-600">
-            {activeTab === 'kha' && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('ga')}
-                className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 font-bold hover:bg-emerald-100"
-              >
-                পরবর্তী: গ বিভাগ →
-              </button>
-            )}
-            {activeTab === 'ga' && (
-              <button
-                type="button"
-                onClick={() => setActiveTab('gha')}
-                className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 font-bold hover:bg-emerald-100"
-              >
-                পরবর্তী: ঘ বিভাগ →
-              </button>
-            )}
-          </div>
+        <div className="px-4 sm:px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <button
               type="button"

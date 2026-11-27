@@ -20,12 +20,45 @@ export function isAlimQuranPaper(
   return isQuranName && isAlim;
 }
 
+export function isDakhilJuniorGrade(grade?: string): boolean {
+  const g = grade || '';
+  return (
+    g.includes('৫ম') ||
+    g.includes('৬ষ্ঠ') ||
+    g.includes('৭ম') ||
+    g.includes('৮ম') ||
+    g.includes('ষষ্ঠ') ||
+    g.includes('সপ্তম') ||
+    g.includes('অষ্টম') ||
+    g.includes('জেডিসি') ||
+    g.includes('ইবতেদায়ী') ||
+    g.includes('ইবতেদায়ী') ||
+    /\b(5|6|7|8)\b/.test(g)
+  );
+}
+
+export function isDakhilJuniorQuran(
+  subject?: string,
+  subjectCode?: string,
+  grade?: string
+): boolean {
+  if (isAlimQuranPaper(subject, subjectCode, grade)) return false;
+  const s = subject || '';
+  const isQuranName =
+    s.includes('কুরআন') ||
+    s.includes('কোরআন') ||
+    s.includes('তাজবীদ') ||
+    s.includes('তাজভিদ');
+  return isQuranName && isDakhilJuniorGrade(grade);
+}
+
 export function isDakhilQuranTajweed(
   subject?: string,
   subjectCode?: string,
   grade?: string
 ): boolean {
   if (isAlimQuranPaper(subject, subjectCode, grade)) return false;
+  if (isDakhilJuniorGrade(grade)) return false;
   const s = subject || '';
   return (
     s.includes('কুরআন') ||
@@ -33,6 +66,38 @@ export function isDakhilQuranTajweed(
     s.includes('তাজবীদ') ||
     s.includes('তাজভিদ')
   );
+}
+
+export function getDakhilJuniorQuranInstructions(mode: BanglaPaperMode): {
+  timeAllowed: string;
+  totalMarks: number;
+  generalInstructions: string[];
+} {
+  if (mode === 'MCQ_ONLY_30') {
+    return {
+      timeAllowed: '২০ মিনিট',
+      totalMarks: 20,
+      generalInstructions: [
+        'বিশেষ দ্রষ্টব্য: প্রতিটি প্রশ্নের মান ১। সকল প্রশ্নের উত্তর দিতে হবে (১×২০ = ২০)।',
+      ],
+    };
+  }
+  if (mode === 'CQ_ONLY_70') {
+    return {
+      timeAllowed: '২ ঘণ্টা ৪০ মিনিট',
+      totalMarks: 80,
+      generalInstructions: [
+        '[দ্রষ্টব্য : ডান পাশের সংখ্যা প্রশ্নের পূর্ণমান জ্ঞাপক। লিখিত ৬৫ + মৌখিক ১৫ = ৮০]',
+      ],
+    };
+  }
+  return {
+    timeAllowed: '৩ ঘণ্টা',
+    totalMarks: 100,
+    generalInstructions: [
+      '[দ্রষ্টব্য : ডান পাশের সংখ্যা প্রশ্নের পূর্ণমান জ্ঞাপক। বহুনির্বাচনি ২০ + লিখিত ৬৫ + মৌখিক ১৫ = ১০০]',
+    ],
+  };
 }
 
 export function getDakhilQuranInstructions(mode: BanglaPaperMode): {
@@ -481,5 +546,173 @@ export const DEFAULT_ALIM_QURAN_STATE: AlimQuranState = {
       placeholder: 'بين سبب نزول سورة الأنفال مع ذكر وجه تسميتها-',
       marks: 10,
     },
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEVEL 0: DAKHIL CLASS 6–8 QURAN MAJID & TAJWEED (WRITTEN 65 + ORAL 15 = 80)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface DakhilJuniorQuranState {
+  startNumber: number; // default 2 (after MCQ 20)
+  writtenBanner: string;
+  // Q2: আয়াতের অনুবাদ (৫ × ৩ = ১৫)
+  q2Title: string;
+  q2MarksText: string;
+  q2Marks: number;
+  q2Ayats: { id: string; text: string; placeholder: string }[];
+  // Q3: বর্ণনামূলক প্রশ্নের উত্তর দাও (৫ × ৩ = ১৫)
+  q3Title: string;
+  q3MarksText: string;
+  q3Marks: number;
+  q3Items: { id: string; text: string; placeholder: string }[];
+  // Q4: তাহকিক কর (২ × ৫ = ১০)
+  q4Title: string;
+  q4MarksText: string;
+  q4Marks: number;
+  q4Words: string;
+  q4Placeholder: string;
+  // Q5: তারকিব কর (৫ × ১ = ৫)
+  q5Title: string;
+  q5MarksText: string;
+  q5Marks: number;
+  q5Items: { id: string; text: string; placeholder: string }[];
+  // Q6: হরকতসহ সূরা/আয়াত মুখস্থ লিখ (৫ × ১ = ৫)
+  q6Title: string;
+  q6MarksText: string;
+  q6Marks: number;
+  q6Items: { id: string; text: string; placeholder: string }[];
+  // Q7: বর্ণনামূলক প্রশ্নের উত্তর দাও — তাজভিদ (৫ × ২ = ১০)
+  q7Title: string;
+  q7MarksText: string;
+  q7Marks: number;
+  q7Items: { id: string; text: string; placeholder: string }[];
+  // Q8: নিচে দাগ দেওয়া অংশগুলোর তাজভিদের কায়দা চিহ্নিত কর (১ × ৫ = ৫)
+  q8Title: string;
+  q8MarksText: string;
+  q8Marks: number;
+  q8Text: string;
+  q8Placeholder: string;
+  // Oral Banner
+  oralBanner: string;
+  // Q9: দেখে দেখে তিলাওয়াত কর (৫)
+  q9Title: string;
+  q9MarksText: string;
+  q9Marks: number;
+  q9Ayat: string;
+  q9Placeholder: string;
+  // Q10: তাজভিদের কায়দা বল (৫)
+  q10Title: string;
+  q10MarksText: string;
+  q10Marks: number;
+  q10Text: string;
+  q10Placeholder: string;
+  // Q11: সূরা মুখস্থ বলো (১টি) (৫)
+  q11Title: string;
+  q11MarksText: string;
+  q11Marks: number;
+  q11Items: { id: string; text: string; placeholder: string }[];
+}
+
+export const DEFAULT_DAKHIL_JUNIOR_QURAN: DakhilJuniorQuranState = {
+  startNumber: 2,
+  writtenBanner: 'লিখিত অংশ : মান-৬৫',
+  q2Title: 'আয়াতের অনুবাদ লেখ (যেকোনো ৩টি) :',
+  q2MarksText: '৫ × ৩ = ১৫',
+  q2Marks: 15,
+  q2Ayats: [
+    {
+      id: 'jq_2a',
+      text: '',
+      placeholder:
+        'إِنَّ أَوَّلَ بَيْتٍ وُضِعَ لِلنَّاسِ لَلَّذِي بِبَكَّةَ مُبَارَكًا وَهُدًى لِلْعَالَمِينَ- فِيهِ آيَاتٌ بَيِّنَاتٌ مَقَامُ إِبْرَاهِيمَ ...',
+    },
+    {
+      id: 'jq_2b',
+      text: '',
+      placeholder:
+        'فَإِذَا قَضَيْتُمُ الصَّلَاةَ فَاذْكُرُوا اللَّهَ قِيَامًا وَقُعُودًا وَعَلَى جُنُوبِكُمْ ... إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَوْقُوتًا-',
+    },
+    {
+      id: 'jq_2c',
+      text: '',
+      placeholder:
+        'وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ أُجِيبُ دَعْوَةَ الدَّاعِ إِذَا دَعَانِ فَلْيَسْتَجِيبُوا لِي وَلْيُؤْمِنُوا بِي لَعَلَّهُمْ يَرْشُدُونَ-',
+    },
+    {
+      id: 'jq_2d',
+      text: '',
+      placeholder:
+        'إِنَّ اللَّهَ وَمَلَائِكَتَهُ يُصَلُّونَ عَلَى النَّبِيِّ يَا أَيُّهَا الَّذِينَ آمَنُوا صَلُّوا عَلَيْهِ وَسَلِّمُوا تَسْلِيمًا-',
+    },
+    {
+      id: 'jq_2e',
+      text: '',
+      placeholder:
+        'إِنَّ اللَّهَ لَا يَغْفِرُ أَنْ يُشْرَكَ بِهِ وَيَغْفِرُ مَا دُونَ ذَلِكَ لِمَنْ يَشَاءُ وَمَنْ يُشْرِكْ بِاللَّهِ فَقَدْ ضَلَّ ضَلَالًا بَعِيدًا-',
+    },
+  ],
+  q3Title: 'বর্ণনামূলক প্রশ্নের উত্তর দাও (যেকোনো ৩টি) :',
+  q3MarksText: '৫ × ৩ = ১৫',
+  q3Marks: 15,
+  q3Items: [
+    { id: 'jq_3a', text: '', placeholder: 'হজ্জের ফরয ও ওয়াজিবসমূহ লেখ।' },
+    { id: 'jq_3b', text: '', placeholder: 'যিকিরের ফযিলত সম্পর্কে লেখ।' },
+    { id: 'jq_3c', text: '', placeholder: 'দরুদ পাঠের ফযিলত বর্ণনা কর।' },
+    { id: 'jq_3d', text: '', placeholder: 'পর্দার গুরুত্ব ও প্রয়োজনীয়তা সম্পর্কে আলোচনা কর।' },
+    { id: 'jq_3e', text: '', placeholder: 'সমাজে প্রচলিত ৪টি দুর্নীতির ক্ষেত্র উল্লেখ করে তা ব্যাখ্যা কর।' },
+  ],
+  q4Title: 'তাহকিক কর (যেকোনো ৫টি) :',
+  q4MarksText: '২ × ৫ = ১০',
+  q4Marks: 10,
+  q4Words: '',
+  q4Placeholder: 'كَفَرَ - وُضِعَ - عُيُونٌ - رَتِّلْ - قُمْ - جَنَّاتٍ - أُدْعُ - النَّبِيُّ .',
+  q5Title: 'তারকিব কর (যেকোনো ১টি) :',
+  q5MarksText: '৫ × ১ = ৫',
+  q5Marks: 5,
+  q5Items: [
+    { id: 'jq_5a', text: '', placeholder: 'فَإِنَّ اللَّهَ غَنِيٌّ عَنِ الْعَالَمِينَ' },
+    { id: 'jq_5b', text: '', placeholder: 'أُجِيبُ دَعْوَةَ الدَّاعِ' },
+  ],
+  q6Title: 'হরকতসহ সূরা/আয়াত মুখস্থ লিখ (যেকোনো ১টি) :',
+  q6MarksText: '৫ × ১ = ৫',
+  q6Marks: 5,
+  q6Items: [
+    { id: 'jq_6a', text: '', placeholder: 'সূরা আল ফাজর ১-৫ আয়াত মুখস্থ লিখ।' },
+    { id: 'jq_6b', text: '', placeholder: 'সূরা আল বালাদ ১-৫ আয়াত মুখস্থ লিখ।' },
+  ],
+  q7Title: 'বর্ণনামূলক প্রশ্নের উত্তর দাও :',
+  q7MarksText: '৫ × ২ = ১০',
+  q7Marks: 10,
+  q7Items: [
+    { id: 'jq_7a', text: '', placeholder: 'وَقْفٌ কাকে বলে? وَقْفٌ কত প্রকার ও কী কী? লেখ।' },
+    { id: 'jq_7b', text: '', placeholder: 'سَكْتَةٌ কাকে বলে? কুরআনে কতস্থানে সাকতা করা হয়? আয়াতসহ উল্লেখ কর।' },
+    { id: 'jq_7c', text: '', placeholder: 'সাকতা বলতে কী বুঝ?' },
+  ],
+  q8Title: 'নিচে দাগ দেওয়া অংশগুলোর তাজভিদের কায়দা চিহ্নিত কর (যেকোনো ৫টি) :',
+  q8MarksText: '১ × ৫ = ৫',
+  q8Marks: 5,
+  q8Text: '',
+  q8Placeholder:
+    'مَنْ <u>ثَقُلَتْ</u> - عِيشَةٍ <u>رَّاضِيَةٍ</u> - مَنْ <u>خَفَّتْ</u> - يَوْمَئِذٍ عَنِ <u>النَّعِيمِ</u> - إِنَّ <u>الْإِنْسَانَ</u> - مَالًا <u>وَعَدَّدَهُ</u> - عَلَيْهِمْ <u>مُؤْصَدَةٌ</u> .',
+  oralBanner: 'মৌখিক : মান-১৫',
+  q9Title: 'দেখে দেখে তিলাওয়াত কর :',
+  q9MarksText: '৫',
+  q9Marks: 5,
+  q9Ayat: '',
+  q9Placeholder:
+    'أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِعَادٍ (٦) إِرَمَ ذَاتِ الْعِمَادِ (٧) الَّتِي لَمْ يُخْلَقْ مِثْلُهَا فِي الْبِلَادِ (٨) وَثَمُودَ الَّذِينَ جَابُوا الصَّخْرَ بِالْوَادِ (٩) وَفِرْعَوْنَ ذِي الْأَوْتَادِ (١٠)',
+  q10Title: 'তাজভিদের কায়দা বল :',
+  q10MarksText: '৫',
+  q10Marks: 5,
+  q10Text: '',
+  q10Placeholder:
+    'فِي جَنَّةٍ <u>عَالِيَةٍ</u> - أَعُوذُ <u>بِاللَّهِ</u> - عَيْنٌ <u>جَارِيَةٌ</u> - مِنْ <u>بَيْنِ</u> الصُّلْبِ - إِلَّا لِمَنِ <u>ارْتَضَى</u> .',
+  q11Title: 'সূরা মুখস্থ বলো (১টি) :',
+  q11MarksText: '৫',
+  q11Marks: 5,
+  q11Items: [
+    { id: 'jq_11a', text: '', placeholder: 'সূরা আল আলা' },
+    { id: 'jq_11b', text: '', placeholder: 'সূরা আল গাশিয়া।' },
   ],
 };

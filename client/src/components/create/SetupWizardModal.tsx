@@ -22,10 +22,22 @@ import {
   isDakhilAqaidFiqh,
 } from './aqaidFiqh/aqaidFiqhDefaults';
 import {
+  getDakhilJuniorQuranInstructions,
   getDakhilQuranInstructions,
   isAlimQuranPaper,
+  isDakhilJuniorQuran,
   isDakhilQuranTajweed,
 } from './quranTajweed/quranTajweedDefaults';
+import {
+  getDakhilHadithInstructions,
+  isAlimHadithPaper,
+  isDakhilHadith,
+} from './hadithSharif/hadithSharifDefaults';
+import {
+  isHscAlimEnglish1st,
+  isSscDakhilEnglish1st,
+  toEnglishGradeLabel,
+} from './english1st/english1stDefaults';
 import {
   GraduationCap,
   BookOpen,
@@ -150,7 +162,7 @@ export const MADRASAH_SUBJECTS = [
     name: 'হাদিস শরিফ',
     shortName: 'হাদিস শরিফ',
     code: '১০২',
-    desc: 'হাদিস এবারত, অনুবাদ ও ব্যাখ্যা',
+    desc: 'দাখিল: MCQ ৪০ + খ ও গ বিভাগ ৬০ · আলিম: আরবি ১০০',
   },
   {
     name: 'ইসলামের ইতিহাস',
@@ -366,8 +378,55 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
       } else {
         setGrade('الصف الأول من العالم');
       }
+    } else if (isDakhilJuniorQuran(subjName, code, grade)) {
+      const modeMeta = getDakhilJuniorQuranInstructions(banglaPaperMode);
+      setTimeAllowed(modeMeta.timeAllowed);
+      setTotalMarks(modeMeta.totalMarks);
+      setInstitutionName('দারুন্নাজাত সিদ্দিকিয়া কামিল মাদ্রাসা');
+      setExamTitle('বার্ষিক / অর্ধ-বার্ষিক পরীক্ষা - ২০২৬');
     } else if (isDakhilQuranTajweed(subjName, code, grade)) {
       const modeMeta = getDakhilQuranInstructions(banglaPaperMode);
+      setTimeAllowed(modeMeta.timeAllowed);
+      setTotalMarks(modeMeta.totalMarks);
+      setInstitutionName('দারুন্নাজাত সিদ্দিকিয়া কামিল মাদ্রাসা');
+      setExamTitle('অর্ধ-বার্ষিক / প্রাক-নির্বাচনি পরীক্ষা - ২০২৬');
+      if (grade.includes('العاشر')) setGrade('দাখিল ১০ম শ্রেণি (দাখিল পরীক্ষা)');
+      else if (grade.includes('التاسع')) setGrade('দাখিল ৯ম শ্রেণি');
+    } else if (isHscAlimEnglish1st(subjName, code, grade)) {
+      const isAlim = isAlimGrade(grade);
+      setInstitutionName(
+        isAlim ? 'Darunnajat Siddikia Kamil Madrasah' : 'Noakhali Government College'
+      );
+      setExamTitle(isAlim ? 'Alim Examination - 2026' : 'HSC Examination - 2026');
+      setSubject('English 1st Paper');
+      setSubjectCode(isAlim ? '236' : '107');
+      setGrade(toEnglishGradeLabel(grade, stream));
+      setTimeAllowed('3 hours');
+      setTotalMarks(100);
+    } else if (isSscDakhilEnglish1st(subjName, code, grade)) {
+      setInstitutionName(
+        stream === 'ALIA' ? 'Darunnajat Siddikia Kamil Madrasah' : 'Noakhali Zilla School'
+      );
+      setExamTitle('Annual / Pre-Test Examination - 2026');
+      setSubject('ENGLISH FIRST PAPER');
+      setSubjectCode(stream === 'ALIA' ? '137' : '107');
+      setGrade(toEnglishGradeLabel(grade, stream));
+      setTimeAllowed('3 hours');
+      setTotalMarks(100);
+    } else if (isAlimHadithPaper(subjName, code, grade)) {
+      setInstitutionName('بهيربهيري عالم مدرسة - تاكورغاو');
+      setExamTitle('امتحان العالم - ٢٠٢٦');
+      setSubject('الحديث وأصول الحديث');
+      setSubjectCode('২০২');
+      setTimeAllowed('ثلاث ساعات');
+      setTotalMarks(100);
+      if (grade.includes('২য়') || grade.includes('২য়') || grade.includes('الثاني')) {
+        setGrade('الصف الثاني من العالم');
+      } else {
+        setGrade('الصف الأول من العالم');
+      }
+    } else if (isDakhilHadith(subjName, code, grade)) {
+      const modeMeta = getDakhilHadithInstructions(banglaPaperMode);
       setTimeAllowed(modeMeta.timeAllowed);
       setTotalMarks(modeMeta.totalMarks);
       setInstitutionName('দারুন্নাজাত সিদ্দিকিয়া কামিল মাদ্রাসা');
@@ -409,8 +468,14 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
     const isB2 = isBangla2ndPaper(subject, subjectCode);
     const isAq = isDakhilAqaidFiqh(subject, subjectCode);
     const isDq = isDakhilQuranTajweed(subject, subjectCode, grade);
-    const meta = isDq
+    const isJdq = isDakhilJuniorQuran(subject, subjectCode, grade);
+    const isDh = isDakhilHadith(subject, subjectCode, grade);
+    const meta = isJdq
+      ? getDakhilJuniorQuranInstructions(mode)
+      : isDq
       ? getDakhilQuranInstructions(mode)
+      : isDh
+      ? getDakhilHadithInstructions(mode)
       : isAq
       ? getAqaidFiqhInstructions(mode)
       : isB2
@@ -424,7 +489,10 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
     const isBangla =
       isBangla1stPaper(subject, subjectCode) ||
       isBangla2ndPaper(subject, subjectCode) ||
-      isDakhilAqaidFiqh(subject, subjectCode);
+      isDakhilAqaidFiqh(subject, subjectCode) ||
+      isDakhilQuranTajweed(subject, subjectCode, grade) ||
+      isDakhilJuniorQuran(subject, subjectCode, grade) ||
+      isDakhilHadith(subject, subjectCode, grade);
     const isAr2nd =
       subject.includes('আরবি ২য়') ||
       subject.includes('قواعد') ||
@@ -746,17 +814,23 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
                 </div>
               </div>
 
-              {/* Bangla 1st, 2nd, Dakhil Aqaid-Fiqh & Dakhil Quran-Tajweed Paper Mode Configuration */}
+              {/* Bangla 1st, 2nd, Dakhil Aqaid-Fiqh, Dakhil Quran-Tajweed & Dakhil Hadith Paper Mode Configuration */}
               {(isBangla1stPaper(subject, subjectCode) ||
                 (isBangla2ndPaper(subject, subjectCode) && !isHscOrAlimGrade(grade)) ||
                 isDakhilAqaidFiqh(subject, subjectCode) ||
-                isDakhilQuranTajweed(subject, subjectCode, grade)) && (
+                isDakhilQuranTajweed(subject, subjectCode, grade) ||
+                isDakhilJuniorQuran(subject, subjectCode, grade) ||
+                isDakhilHadith(subject, subjectCode, grade)) && (
                 <div className="bg-emerald-50/70 border border-emerald-200 p-3 rounded-2xl space-y-2.5">
                   <div className="text-[11px] font-extrabold text-emerald-950 flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                     <span className="truncate">
-                      {isDakhilQuranTajweed(subject, subjectCode, grade)
-                        ? 'কুরআন মাজিদ ও তাজবীদ পরীক্ষার ধরন (৬ষ্ঠ–১০ম / দাখিল: MCQ ৪০ + খ–ঘ বিভাগ ৬০):'
+                      {isDakhilJuniorQuran(subject, subjectCode, grade)
+                        ? 'কুরআন মাজিদ ও তাজভিদ পরীক্ষার ধরন (৬ষ্ঠ–৮ম শ্রেণি: MCQ ২০ + লিখিত ৬৫ + মৌখিক ১৫):'
+                        : isDakhilQuranTajweed(subject, subjectCode, grade)
+                        ? 'কুরআন মাজিদ ও তাজবীদ পরীক্ষার ধরন (দাখিল ৯ম–১০ম: MCQ ৪০ + খ–ঘ বিভাগ ৬০):'
+                        : isDakhilHadith(subject, subjectCode, grade)
+                        ? 'হাদিস শরিফ পরীক্ষার ধরন (দাখিল ৬ষ্ঠ–১০ম: ক বিভাগ MCQ ৪০ + খ ও গ বিভাগ ৬০):'
                         : isDakhilAqaidFiqh(subject, subjectCode)
                         ? 'আকাইদ ও ফিকহ পরীক্ষার ধরন (৬ষ্ঠ–১০ম শ্রেণি / দাখিল: MCQ ৪০ + ৫ বিভাগ রচনামূলক ৬০):'
                         : isBangla2ndPaper(subject, subjectCode)
@@ -770,38 +844,50 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
                       {
                         id: 'COMBINED_100' as BanglaPaperMode,
                         title: 'একত্রে ১০০',
-                        sub:
-                          isDakhilQuranTajweed(subject, subjectCode, grade) ||
-                          isDakhilAqaidFiqh(subject, subjectCode)
-                            ? 'MCQ ৪০ + রচনামূলক ৬০'
-                            : isBangla2ndPaper(subject, subjectCode)
-                            ? 'MCQ ৩০ + রচনামূলক ৭০'
-                            : 'MCQ ৩০ + CQ ৭০',
+                        sub: isDakhilJuniorQuran(subject, subjectCode, grade)
+                          ? 'MCQ ২০ + লিখিত ৬৫ + মৌখিক ১৫'
+                          : isDakhilQuranTajweed(subject, subjectCode, grade) ||
+                            isDakhilHadith(subject, subjectCode, grade) ||
+                            isDakhilAqaidFiqh(subject, subjectCode)
+                          ? 'MCQ ৪০ + রচনামূলক ৬০'
+                          : isBangla2ndPaper(subject, subjectCode)
+                          ? 'MCQ ৩০ + রচনামূলক ৭০'
+                          : 'MCQ ৩০ + CQ ৭০',
                       },
                       {
                         id: 'MCQ_ONLY_30' as BanglaPaperMode,
-                        title:
-                          isDakhilQuranTajweed(subject, subjectCode, grade) ||
-                          isDakhilAqaidFiqh(subject, subjectCode)
-                            ? 'শুধু MCQ ৪০'
-                            : 'শুধু MCQ ৩০',
-                        sub:
-                          isDakhilQuranTajweed(subject, subjectCode, grade) ||
-                          isDakhilAqaidFiqh(subject, subjectCode)
-                            ? '৪০টি প্রশ্ন · ৪০ মি.'
-                            : '৩০টি প্রশ্ন · ৩০ মি.',
+                        title: isDakhilJuniorQuran(subject, subjectCode, grade)
+                          ? 'শুধু MCQ ২০'
+                          : isDakhilQuranTajweed(subject, subjectCode, grade) ||
+                            isDakhilHadith(subject, subjectCode, grade) ||
+                            isDakhilAqaidFiqh(subject, subjectCode)
+                          ? 'শুধু MCQ ৪০'
+                          : 'শুধু MCQ ৩০',
+                        sub: isDakhilJuniorQuran(subject, subjectCode, grade)
+                          ? '২০টি প্রশ্ন · ২০ মি.'
+                          : isDakhilQuranTajweed(subject, subjectCode, grade) ||
+                            isDakhilHadith(subject, subjectCode, grade) ||
+                            isDakhilAqaidFiqh(subject, subjectCode)
+                          ? '৪০টি প্রশ্ন · ৪০ মি.'
+                          : '৩০টি প্রশ্ন · ৩০ মি.',
                       },
                       {
                         id: 'CQ_ONLY_70' as BanglaPaperMode,
-                        title:
-                          isDakhilQuranTajweed(subject, subjectCode, grade) ||
-                          isDakhilAqaidFiqh(subject, subjectCode)
-                            ? 'শুধু রচনামূলক ৬০'
-                            : isBangla2ndPaper(subject, subjectCode)
-                            ? 'শুধু রচনামূলক ৭০'
-                            : 'শুধু CQ ৭০',
-                        sub: isDakhilQuranTajweed(subject, subjectCode, grade)
+                        title: isDakhilJuniorQuran(subject, subjectCode, grade)
+                          ? 'লিখিত ও মৌখিক ৮০'
+                          : isDakhilQuranTajweed(subject, subjectCode, grade) ||
+                            isDakhilHadith(subject, subjectCode, grade) ||
+                            isDakhilAqaidFiqh(subject, subjectCode)
+                          ? 'শুধু রচনামূলক ৬০'
+                          : isBangla2ndPaper(subject, subjectCode)
+                          ? 'শুধু রচনামূলক ৭০'
+                          : 'শুধু CQ ৭০',
+                        sub: isDakhilJuniorQuran(subject, subjectCode, grade)
+                          ? 'লিখিত ৬৫ + মৌখিক ১৫'
+                          : isDakhilQuranTajweed(subject, subjectCode, grade)
                           ? 'খ–ঘ বিভাগ · ২:২০ ঘ.'
+                          : isDakhilHadith(subject, subjectCode, grade)
+                          ? 'খ ও গ বিভাগ · ২:২০ ঘ.'
                           : isDakhilAqaidFiqh(subject, subjectCode)
                           ? 'খ–চ বিভাগ · ২:২০ ঘ.'
                           : isBangla2ndPaper(subject, subjectCode)

@@ -15,6 +15,8 @@ import {
   convertToArabicDigits,
 } from 'proshno-shared';
 import { MultiScriptText } from '../common/MultiScriptText';
+import { EngChartSvg } from './english1st/EngChartSvg';
+import { EngChartData, EngInfoTableData } from './english1st/english1stDefaults';
 import { QuestionSpacingHandle } from './QuestionSpacingHandle';
 import {
   GripVertical,
@@ -721,6 +723,157 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             );
           })()}
         </div>
+      ) : question.groupRole === 'junior_quran_banner' ? (
+        /* ───────────────── DAKHIL CLASS 6–8 QURAN CENTERED BANNER (লিখিত / মৌখিক) ───────────────── */
+        <div dir="ltr" className="text-center font-serif font-bold text-[1.04em] text-slate-900 my-2">
+          <span
+            contentEditable={isEditingText}
+            data-editable-field="true"
+            suppressContentEditableWarning
+            onBlur={handleStemBlur}
+            className="outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded px-1 cursor-text"
+          >
+            <MultiScriptText text={question.stemOrPassage || 'লিখিত অংশ : মান-৬৫'} />
+          </span>
+        </div>
+      ) : question.groupRole === 'junior_quran_ayat_list' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── DAKHIL CLASS 6–8 QURAN Q2 (আয়াতের অনুবাদ: (ক)-(ঙ) + RTL Ayat) ───────────────── */
+        <div dir="ltr" className="my-1.5 font-serif text-[1em] text-slate-900 space-y-1.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-1.5 flex-1 min-w-0">
+              {qNumberDisplay ? (
+                <span className="q-number font-bold shrink-0 min-w-[20px]">{qNumberDisplay}</span>
+              ) : null}
+              <span className="font-bold flex-1">
+                <MultiScriptText text={question.stemOrPassage || 'আয়াতের অনুবাদ লেখ :'} />
+              </span>
+            </div>
+            {marksDisplay ? (
+              <span className="q-marks font-bold shrink-0 text-[0.94em] ps-2">{marksDisplay}</span>
+            ) : null}
+          </div>
+          <div className="space-y-1.5 pl-4">
+            {question.subQuestions.map((sub, sIdx) => (
+              <div key={sIdx} className="flex items-start gap-2">
+                <span className="shrink-0 font-semibold pt-1">({sub.part})</span>
+                <div
+                  dir="rtl"
+                  contentEditable={isEditingText}
+                  data-editable-field="true"
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                  className="flex-1 font-ar text-[1.1em] leading-[1.95] text-right text-justify whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                >
+                  <MultiScriptText text={sub.questionText || 'আরবি আয়াত লিখুন...'} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : question.groupRole === 'junior_quran_choice_list' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── DAKHIL CLASS 6–8 QURAN Q3/Q6/Q7/Q11 (Bengali + inline Arabic list) ───────────────── */
+        <div dir="ltr" className="my-1.5 font-serif text-[1em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-1.5 flex-1 min-w-0">
+              {qNumberDisplay ? (
+                <span className="q-number font-bold shrink-0 min-w-[20px]">{qNumberDisplay}</span>
+              ) : null}
+              <span className="font-bold flex-1">
+                <MultiScriptText text={question.stemOrPassage || 'প্রশ্নের উত্তর দাও :'} />
+              </span>
+            </div>
+            {marksDisplay ? (
+              <span className="q-marks font-bold shrink-0 text-[0.94em] ps-2">{marksDisplay}</span>
+            ) : null}
+          </div>
+          <div className="space-y-1 pl-5">
+            {question.subQuestions.map((sub, sIdx) => (
+              <div key={sIdx} className="flex items-start gap-1.5">
+                <span className="shrink-0">({sub.part})</span>
+                <span
+                  contentEditable={isEditingText}
+                  data-editable-field="true"
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                  className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                >
+                  <MultiScriptText text={sub.questionText || 'প্রশ্ন লিখুন...'} />
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : question.groupRole === 'junior_quran_arabic_block' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── DAKHIL CLASS 6–8 QURAN Q4/Q5/Q8/Q9/Q10 (Tahqeeq, Tarkib, Underlined Tajweed, Tilawat) ───────────────── */
+        <div dir="ltr" className="my-1.5 font-serif text-[1em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-1.5 flex-1 min-w-0">
+              {qNumberDisplay ? (
+                <span className="q-number font-bold shrink-0 min-w-[20px]">{qNumberDisplay}</span>
+              ) : null}
+              <span className="font-bold flex-1">
+                <MultiScriptText text={question.stemOrPassage || ''} />
+              </span>
+            </div>
+            {marksDisplay ? (
+              <span className="q-marks font-bold shrink-0 text-[0.94em] ps-2">{marksDisplay}</span>
+            ) : null}
+          </div>
+
+          {question.subQuestions[0]?.bloomTitle === 'labeled' ? (
+            <div className="space-y-1 pl-5">
+              {question.subQuestions.map((sub, sIdx) => (
+                <div key={sIdx} className="flex items-baseline justify-end gap-2">
+                  <span
+                    dir="rtl"
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                    className="font-ar text-[1.08em] text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                  >
+                    <MultiScriptText text={sub.questionText || 'আরবি বাক্য লিখুন...'} />
+                  </span>
+                  <span className="shrink-0 font-serif text-[0.95em]">({sub.part})</span>
+                </div>
+              ))}
+            </div>
+          ) : question.subQuestions[0]?.bloomTitle === 'underline_html' ? (
+            <div
+              dir="rtl"
+              className="font-ar text-[1.12em] leading-[2] text-right pl-4 pr-2 whitespace-pre-line"
+            >
+              {(question.subQuestions[0]?.questionText || '')
+                .split(/(<u>.*?<\/u>)/g)
+                .map((seg, i) =>
+                  seg.startsWith('<u>') && seg.endsWith('</u>') ? (
+                    <u key={i} className="underline underline-offset-4 decoration-slate-900">
+                      {seg.slice(3, -4)}
+                    </u>
+                  ) : (
+                    <React.Fragment key={i}>{seg}</React.Fragment>
+                  )
+                )}
+            </div>
+          ) : (
+            <div
+              dir="rtl"
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={(e) => handleCqPartBlur(0, e)}
+              className="font-ar text-[1.1em] leading-[1.95] text-right pl-4 pr-2 whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              <MultiScriptText text={question.subQuestions[0]?.questionText || 'আরবি টেক্সট লিখুন...'} />
+            </div>
+          )}
+        </div>
       ) : question.groupRole === 'quran_section_banner' ? (
         /* ───────────────── DAKHIL QURAN & TAJWEED SECTION HEADER (খ/গ/ঘ বিভাগ) ───────────────── */
         <div dir="ltr" className="my-2 font-serif text-slate-900">
@@ -1033,6 +1186,671 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               {marksDisplay}
             </span>
           ) : null}
+        </div>
+      ) : question.groupRole === 'hadith_section_banner' ? (
+        /* ───────────────── DAKHIL HADITH SECTION HEADER (খ ও গ বিভাগ) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-slate-900">
+          <div className="text-center space-y-0.5">
+            {(question.stemOrPassage || '').split('\n').map((line, lIdx) => (
+              <div
+                key={lIdx}
+                className={lIdx === 0 ? 'font-bold text-[1.04em]' : 'font-semibold text-[0.95em]'}
+              >
+                <MultiScriptText text={line} />
+              </div>
+            ))}
+          </div>
+          {question.customMarksText ? (
+            <div className="text-right text-[0.88em] font-bold text-slate-800 pr-0.5 -mt-1">
+              {question.customMarksText}
+            </div>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'hadith_kha_item' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── DAKHIL HADITH খ বিভাগ QUESTION (২–১০ নং: ক অনুবাদ [৫], খ উত্তর দাও -> (أ) [৩], (ب) তাহকিক [২]) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[1em] text-slate-900 space-y-1.5">
+          {(() => {
+            const subKa = question.subQuestions[0];
+            const subKhaAlif = question.subQuestions[1];
+            const subKhaBa = question.subQuestions[2];
+            const toBn = (n: number) => String(n).replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[Number(d)]);
+            return (
+              <>
+                {/* (ক) বাংলায় অনুবাদ কর + আরবি হাদিস */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                    {qNumberDisplay ? (
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={handleNumberBlur}
+                        className="q-number font-bold shrink-0 min-w-[22px] outline-none"
+                      >
+                        {qNumberDisplay}
+                      </span>
+                    ) : null}
+                    <span className="shrink-0">(ক)</span>
+                    <span className="flex-1">
+                      <MultiScriptText text={subKa?.bloomTitle || 'বাংলায় অনুবাদ কর:'} />
+                    </span>
+                  </div>
+                  <span className="q-marks shrink-0 font-bold text-[0.95em] ps-2">
+                    {toBn(subKa?.marks || 5)}
+                  </span>
+                </div>
+
+                {subKa?.questionText && (
+                  <div
+                    dir="rtl"
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
+                    suppressContentEditableWarning
+                    onBlur={(e) => handleCqPartBlur(0, e)}
+                    className="font-ar text-[1.1em] leading-[1.95] text-right text-justify pl-8 pr-4 whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                  >
+                    <MultiScriptText text={subKa.questionText} />
+                  </div>
+                )}
+
+                {/* (খ) উত্তর দাও: (أ) ও (ب) */}
+                {(subKhaAlif || subKhaBa) && (
+                  <div className="space-y-1 pl-[26px]">
+                    <div className="flex items-start gap-1.5">
+                      <span className="shrink-0">(খ)</span>
+                      <span>
+                        <MultiScriptText text={subKhaAlif?.bloomTitle || 'উত্তর দাও:'} />
+                      </span>
+                    </div>
+
+                    {/* (أ) তাৎপর্য / পরিচয় / পার্থক্য / ব্যাখ্যা */}
+                    {subKhaAlif && (
+                      <div className="flex items-start justify-between gap-2 pl-6">
+                        <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                          <span className="shrink-0 font-ar text-[1.02em]">(أ)</span>
+                          <span
+                            contentEditable={isEditingText}
+                            data-editable-field="true"
+                            suppressContentEditableWarning
+                            onBlur={(e) => handleCqPartBlur(1, e)}
+                            className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                          >
+                            <MultiScriptText
+                              text={subKhaAlif.questionText || 'তাৎপর্য / ব্যাখ্যা লিখুন...'}
+                            />
+                          </span>
+                        </div>
+                        <span className="q-marks shrink-0 font-bold text-[0.95em] ps-2">
+                          {toBn(subKhaAlif.marks || 3)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* (ب) তাহকিক কর (যে কোনো দুটি): [আরবি শব্দসমূহ] */}
+                    {subKhaBa && (
+                      <div className="flex items-start justify-between gap-2 pl-6">
+                        <div className="flex items-baseline flex-wrap justify-between gap-x-4 gap-y-0.5 flex-1 min-w-0">
+                          <div className="flex items-start gap-1.5">
+                            <span className="shrink-0 font-ar text-[1.02em]">(ب)</span>
+                            <span>
+                              <MultiScriptText
+                                text={subKhaBa.bloomTitle || 'তাহকিক কর (যে কোনো দুটি):'}
+                              />
+                            </span>
+                          </div>
+                          {subKhaBa.questionText && (
+                            <span
+                              dir="rtl"
+                              contentEditable={isEditingText}
+                              data-editable-field="true"
+                              suppressContentEditableWarning
+                              onBlur={(e) => handleCqPartBlur(2, e)}
+                              className="font-ar text-[1.08em] text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded px-1 cursor-text"
+                            >
+                              <MultiScriptText text={subKhaBa.questionText} />
+                            </span>
+                          )}
+                        </div>
+                        <span className="q-marks shrink-0 font-bold text-[0.95em] ps-2">
+                          {toBn(subKhaBa.marks || 2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'hadith_ga_item' ? (
+        /* ───────────────── DAKHIL HADITH গ বিভাগ QUESTION (১১–১৩ নং, মান ৫) ───────────────── */
+        <div dir="ltr" className="flex items-start justify-between gap-2 font-serif text-[1em] text-slate-900 my-1">
+          <div className="flex items-start gap-1.5 flex-1 min-w-0">
+            {qNumberDisplay ? (
+              <span
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={handleNumberBlur}
+                className="q-number shrink-0 min-w-[24px] outline-none"
+              >
+                {qNumberDisplay}
+              </span>
+            ) : null}
+            <div
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleStemBlur}
+              className="flex-1 text-justify whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              <MultiScriptText text={question.stemOrPassage || 'প্রশ্ন লিখুন...'} />
+            </div>
+          </div>
+          {marksDisplay ? (
+            <span className="q-marks shrink-0 font-bold text-[0.95em] ps-2">
+              {marksDisplay}
+            </span>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'alim_hadith_banner' ? (
+        /* ───────────────── ALIM HADITH GROUP BANNER (مجموعة (أ)—الحديث / مجموعة (ب)—أصول الحديث) ───────────────── */
+        <div dir="rtl" className="my-2 font-ar text-slate-900">
+          <div className="text-center space-y-0.5">
+            {(question.stemOrPassage || '').split('\n').map((line, lIdx) => (
+              <div
+                key={lIdx}
+                className={
+                  lIdx === 0
+                    ? 'font-bold text-[1.12em]'
+                    : lIdx === 1
+                    ? 'font-semibold text-[1em]'
+                    : 'text-[0.96em]'
+                }
+              >
+                <MultiScriptText text={line} />
+              </div>
+            ))}
+          </div>
+          {question.customMarksText ? (
+            <div className="text-left font-bold text-[0.94em] pl-1 -mt-1">
+              {question.customMarksText}
+            </div>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'alim_hadith_group_a_item' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── ALIM HADITH GROUP A (١–٧: حديث [١٠] + (أ) [٣] + (ب) [٣]) ───────────────── */
+        <div dir="rtl" className="my-2 font-ar text-[1.04em] text-slate-900 space-y-1.5">
+          {(() => {
+            const subA = question.subQuestions[0];
+            const subB = question.subQuestions[1];
+            const toAr = (n: number) => String(n).replace(/[0-9]/g, (d) => '٠١٢٣٤٥٦٧٨٩'[Number(d)]);
+            return (
+              <>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {qNumberDisplay ? (
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={handleNumberBlur}
+                        className="q-number font-bold shrink-0 min-w-[22px] outline-none"
+                      >
+                        {qNumberDisplay}
+                      </span>
+                    ) : null}
+                    <div
+                      contentEditable={isEditingText}
+                      data-editable-field="true"
+                      suppressContentEditableWarning
+                      onBlur={handleStemBlur}
+                      className="flex-1 text-right text-justify leading-[1.95] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                    >
+                      <MultiScriptText text={question.stemOrPassage || 'اكتب الحديث النبوي...'} />
+                    </div>
+                  </div>
+                  <span className="q-marks font-bold shrink-0 ps-2">
+                    {marksDisplay || toAr(10)}
+                  </span>
+                </div>
+
+                {subA && (
+                  <div className="flex items-start justify-between gap-2 pr-7">
+                    <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                      <span className="shrink-0">( أ )</span>
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCqPartBlur(0, e)}
+                        className="flex-1 text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        <MultiScriptText text={subA.questionText || 'اشرح قوله عليه السلام...'} />
+                      </span>
+                    </div>
+                    <span className="q-marks font-bold shrink-0 ps-2">
+                      {toAr(subA.marks || 3)}
+                    </span>
+                  </div>
+                )}
+
+                {subB && (
+                  <div className="flex items-start justify-between gap-2 pr-7">
+                    <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                      <span className="shrink-0">( ب )</span>
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCqPartBlur(1, e)}
+                        className="flex-1 text-right outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        <MultiScriptText text={subB.questionText || 'حقق : ...'} />
+                      </span>
+                    </div>
+                    <span className="q-marks font-bold shrink-0 ps-2">
+                      {toAr(subB.marks || 3)}
+                    </span>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'alim_hadith_group_b_item' ? (
+        /* ───────────────── ALIM HADITH GROUP B (٨–١١, الدرجات ١٠) ───────────────── */
+        <div dir="rtl" className="flex items-start justify-between gap-2 font-ar text-[1.04em] text-slate-900 my-1.5">
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            {qNumberDisplay ? (
+              <span
+                contentEditable={isEditingText}
+                data-editable-field="true"
+                suppressContentEditableWarning
+                onBlur={handleNumberBlur}
+                className="q-number font-bold shrink-0 min-w-[24px] outline-none"
+              >
+                {qNumberDisplay}
+              </span>
+            ) : null}
+            <div
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleStemBlur}
+              className="flex-1 text-right whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              <MultiScriptText text={question.stemOrPassage || 'اكتب السؤال هنا...'} />
+            </div>
+          </div>
+          {marksDisplay ? (
+            <span className="q-marks font-bold shrink-0 ps-2">
+              {marksDisplay}
+            </span>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'eng1_part_banner' ? (
+        /* ───────────────── ENGLISH 1ST PAPER PART BANNER (Part A / Part B / Part-I / Part-II) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-slate-900">
+          <div className="text-center space-y-0.5">
+            {(question.stemOrPassage || '').split('\n').map((line, lIdx) => (
+              <div
+                key={lIdx}
+                className={lIdx === 0 ? 'font-bold text-[1.04em]' : 'font-semibold text-[0.95em]'}
+              >
+                {line}
+              </div>
+            ))}
+          </div>
+          {question.customMarksText ? (
+            <div className="text-right text-[0.88em] font-bold text-slate-800 pr-0.5 -mt-1">
+              {question.customMarksText}
+            </div>
+          ) : null}
+        </div>
+      ) : question.groupRole === 'eng1_passage' ? (
+        /* ───────────────── ENGLISH 1ST PAPER READING PASSAGE ───────────────── */
+        <div dir="ltr" className="my-1.5 font-serif text-[0.98em] text-slate-900 space-y-1">
+          <div className="flex items-start gap-2 font-bold">
+            {qNumberDisplay ? <span className="q-number shrink-0">{qNumberDisplay}</span> : null}
+            <span>{question.chapter || 'Read the passage carefully and answer the questions :'}</span>
+          </div>
+          <div
+            contentEditable={isEditingText}
+            data-editable-field="true"
+            suppressContentEditableWarning
+            onBlur={handleStemBlur}
+            className={`text-justify leading-[1.55] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text ${
+              qNumberDisplay ? 'pl-6' : ''
+            }`}
+          >
+            {question.stemOrPassage}
+          </div>
+        </div>
+      ) : question.groupRole === 'eng1_mcq_list' &&
+        question.passageQuestions &&
+        question.passageQuestions.length > 0 ? (
+        /* ───────────────── ENGLISH 1ST PAPER MCQ LIST (Q.1 / A.) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1.5">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.stemOrPassage || 'Choose the best answer from the alternatives :'}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          <div className="pl-6 space-y-1.5">
+            {question.passageQuestions.map((pq, pIdx) => {
+              const letter = String.fromCharCode(97 + pIdx);
+              return (
+                <div key={pq.id || pIdx} className="space-y-0.5">
+                  <div className="flex items-start gap-1.5">
+                    <span className="italic font-semibold shrink-0">({letter})</span>
+                    <span className="font-medium">{pq.questionText}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 pl-6 text-[0.95em]">
+                    {(pq.options || []).map((opt, oIdx) => (
+                      <div key={oIdx} className="flex items-start gap-1.5">
+                        <span className="italic shrink-0">{opt.label}</span>
+                        <span>{opt.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : question.groupRole === 'eng1_qa_list' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── ENGLISH 1ST PAPER OPEN Q/A LIST (Q.2, Q.8, Q.9, B.) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.stemOrPassage || 'Answer the following questions :'}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          <div className="pl-6 space-y-0.5">
+            {question.subQuestions.map((sub, sIdx) => (
+              <div key={sIdx} className="flex items-start gap-1.5">
+                <span className="italic shrink-0">({sub.part})</span>
+                <span
+                  contentEditable={isEditingText}
+                  data-editable-field="true"
+                  suppressContentEditableWarning
+                  onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                  className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                >
+                  {sub.questionText}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : question.groupRole === 'eng1_cloze' ? (
+        /* ───────────────── ENGLISH 1ST PAPER CLOZE TEST (WITH OR WITHOUT CLUES) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1.5">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.topic || 'Fill in the blanks with appropriate words :'}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          {question.wordClues && question.wordClues.length > 0 && (
+            <div className="pl-6 my-1">
+              <table className="w-full border-collapse border border-slate-800 text-[0.92em]">
+                <tbody>
+                  {Array.from({ length: Math.ceil(question.wordClues.length / 6) }).map((_, rIdx) => (
+                    <tr key={rIdx}>
+                      {Array.from({ length: 6 }).map((__, cIdx) => (
+                        <td
+                          key={cIdx}
+                          className="border border-slate-800 px-2 py-0.5 text-left"
+                        >
+                          {question.wordClues?.[rIdx * 6 + cIdx] || ''}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div
+            contentEditable={isEditingText}
+            data-editable-field="true"
+            suppressContentEditableWarning
+            onBlur={handleStemBlur}
+            className="pl-6 text-justify leading-[1.6] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+          >
+            {question.stemOrPassage}
+          </div>
+        </div>
+      ) : question.groupRole === 'eng1_info_table' ? (
+        /* ───────────────── ENGLISH 1ST PAPER INFORMATION TRANSFER TABLE (Q.4 / 02.) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.96em] text-slate-900 space-y-1.5">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.topic || 'Complete the table below with the given information :'}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          {question.stemOrPassage && (
+            <div
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleStemBlur}
+              className="pl-6 text-justify leading-[1.55] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              {question.stemOrPassage}
+            </div>
+          )}
+          {(() => {
+            let table: EngInfoTableData | null = null;
+            try {
+              if (question.explanation) table = JSON.parse(question.explanation);
+            } catch {
+              table = null;
+            }
+            if (!table) return null;
+            const colSpan = Math.max(1, (table.headers?.length || 1) - 1);
+            return (
+              <div className="pl-6">
+                <table className="w-full border-collapse border border-slate-800 text-[0.92em]">
+                  <tbody>
+                    {(table.topRows || []).map((tr, i) => (
+                      <tr key={`top_${i}`}>
+                        <td className="border border-slate-800 px-2 py-1 font-semibold">{tr.label}</td>
+                        <td colSpan={colSpan} className="border border-slate-800 px-2 py-1">
+                          {tr.value}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr>
+                      {(table.headers || []).map((h, i) => (
+                        <th
+                          key={i}
+                          className="border border-slate-800 px-2 py-1 font-bold text-center bg-slate-50/60"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                    {(table.rows || []).map((row, rIdx) => (
+                      <tr key={rIdx}>
+                        {row.map((cell, cIdx) => (
+                          <td key={cIdx} className="border border-slate-800 px-2 py-1 align-top">
+                            {cell}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'eng1_matching_table' && question.matchingColumns ? (
+        /* ───────────────── ENGLISH 1ST PAPER 3-COLUMN MATCHING TABLE (Q.6) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.96em] text-slate-900 space-y-1.5">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.stemOrPassage}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          {(() => {
+            const { colA, colB, colC } = question.matchingColumns!;
+            const hasC = Boolean(colC && colC.length > 0);
+            const roman = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'];
+            const count = Math.max(colA.length, colB.length, colC?.length || 0);
+            return (
+              <div className="pl-6">
+                <table className="w-full border-collapse border border-slate-800 text-[0.93em]">
+                  <thead>
+                    <tr>
+                      <th className="border border-slate-800 px-2 py-1 text-center font-bold">
+                        Column A
+                      </th>
+                      <th className="border border-slate-800 px-2 py-1 text-center font-bold">
+                        Column B
+                      </th>
+                      {hasC && (
+                        <th className="border border-slate-800 px-2 py-1 text-center font-bold">
+                          Column C
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: count }).map((_, idx) => (
+                      <tr key={idx}>
+                        <td className="border border-slate-800 px-2 py-1 align-top">
+                          <span className="italic mr-1.5">({String.fromCharCode(97 + idx)})</span>
+                          {colA[idx] || ''}
+                        </td>
+                        <td className="border border-slate-800 px-2 py-1 align-top">
+                          <span className="italic mr-1.5">({roman[idx] || idx + 1})</span>
+                          {colB[idx] || ''}
+                        </td>
+                        {hasC && (
+                          <td className="border border-slate-800 px-2 py-1 align-top">
+                            <span className="italic mr-1.5">({roman[idx] || idx + 1})</span>
+                            {colC?.[idx] || ''}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'eng1_rearrange' && question.statements ? (
+        /* ───────────────── ENGLISH 1ST PAPER REARRANGING SENTENCES (Q.7 / 06.) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.stemOrPassage}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          <div className="pl-6 space-y-0.5">
+            {question.statements.map((sent, idx) => {
+              const roman = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+              const lbl =
+                question.chapter === 'roman'
+                  ? `(${roman[idx] || idx + 1})`
+                  : `(${String.fromCharCode(97 + idx)})`;
+              return (
+                <div key={idx} className="flex items-start gap-2">
+                  <span className="italic shrink-0 min-w-[24px]">{lbl}</span>
+                  <span>{sent}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : question.groupRole === 'eng1_writing' ? (
+        /* ───────────────── ENGLISH 1ST PAPER WRITING / SUMMARY / STORY / PARAGRAPH / LETTER ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? (
+                <span className="q-number font-bold shrink-0 min-w-[20px]">{qNumberDisplay}</span>
+              ) : null}
+              <span className="font-bold text-justify">{question.topic}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          {question.stemOrPassage && (
+            <div
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleStemBlur}
+              className="pl-6 text-justify leading-[1.55] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              {question.stemOrPassage}
+            </div>
+          )}
+        </div>
+      ) : question.groupRole === 'eng1_chart' ? (
+        /* ───────────────── HSC/ALIM ENGLISH 1ST PAPER PIE CHART / BAR GRAPH (Q.10) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.stemOrPassage}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          {(() => {
+            let chart: EngChartData | null = null;
+            try {
+              if (question.explanation) chart = JSON.parse(question.explanation);
+            } catch {
+              chart = null;
+            }
+            return chart ? <EngChartSvg data={chart} /> : null;
+          })()}
+        </div>
+      ) : question.groupRole === 'eng1_poem_theme' ? (
+        /* ───────────────── HSC/ALIM ENGLISH 1ST PAPER POEM THEME (Q.11) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.topic || 'Write down the theme of the following poem.'}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          <div className="pl-6 space-y-0.5">
+            {question.chapter && <div className="font-bold tracking-wide">{question.chapter}</div>}
+            <div
+              contentEditable={isEditingText}
+              data-editable-field="true"
+              suppressContentEditableWarning
+              onBlur={handleStemBlur}
+              className="leading-[1.55] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+            >
+              {question.stemOrPassage}
+            </div>
+          </div>
         </div>
       ) : question.groupRole === 'alim_ar2_banner' ? (
         /* ───────────────── ALIM ARABIC 2ND PAPER CENTERED SECTION HEADER ───────────────── */
@@ -1860,16 +2678,20 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
         })()}
 
       {/* ───────────────── WORD CLUES BOX (صندوق الكلمات - শূন্যস্থান পূরণের শব্দ বাক্স) ───────────────── */}
-      {!parsedMultiLine && renderWordCluesTable()}
+      {!parsedMultiLine && !question.groupRole?.startsWith('eng1_') && renderWordCluesTable()}
 
       {/* ───────────────── SUB-QUESTIONS (Arabic Comprehension & CQ Parts) ───────────────── */}
       {!question.groupRole?.startsWith('bangla2nd_') &&
+        !question.groupRole?.startsWith('junior_quran_') &&
+        !question.groupRole?.startsWith('eng1_') &&
         question.groupRole !== 'alim_fiqh_item' &&
         question.groupRole !== 'alim_ar2_q12_ar_bn' &&
         question.groupRole !== 'alim_ar2_q13_bn_ar' &&
         question.groupRole !== 'alim_ar2_q15_letter' &&
         question.groupRole !== 'quran_ayat_item' &&
         question.groupRole !== 'alim_quran_group_a_item' &&
+        question.groupRole !== 'hadith_kha_item' &&
+        question.groupRole !== 'alim_hadith_group_a_item' &&
         question.subQuestions &&
         question.subQuestions.length > 0 && (
         <div className={`pt-1.5 space-y-1 text-[0.92em] font-serif ${isRTL ? 'pr-2' : 'pl-4'}`}>

@@ -2,6 +2,7 @@
 
 import React, { useRef } from 'react';
 import { InstitutionHeaderConfig, LayoutConfig } from 'proshno-shared';
+import { toEnglishGradeLabel } from './english1st/english1stDefaults';
 
 interface EditableHeaderProps {
   headerConfig: InstitutionHeaderConfig;
@@ -40,10 +41,29 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
     headerConfig.subject?.includes('আরবি') ||
     headerConfig.subject?.includes('العربية') ||
     headerConfig.subject?.includes('الفقه') ||
+    headerConfig.subject?.includes('القرآن') ||
+    headerConfig.subject?.includes('الحديث') ||
     headerConfig.subject?.includes('Arabic') ||
+    headerConfig.subjectCode === '২০১' ||
+    headerConfig.subjectCode === '২০২' ||
+    headerConfig.subjectCode === '٢٠٢' ||
     headerConfig.subjectCode === '২০৩' ||
     headerConfig.subjectCode === '২০৪' ||
     layoutConfig.numberingFormat === 'ar';
+
+  const isEnglishSubject =
+    !isArabicSubject &&
+    Boolean(
+      headerConfig.subject?.toLowerCase().includes('english') ||
+        headerConfig.subject?.includes('ইংরেজি') ||
+        headerConfig.subjectCode === '107' ||
+        headerConfig.subjectCode === '137' ||
+        headerConfig.subjectCode === '236' ||
+        headerConfig.subjectCode === '১০৭' ||
+        headerConfig.subjectCode === '১৩৭' ||
+        headerConfig.subjectCode === '২৩৬' ||
+        layoutConfig.numberingFormat === 'en'
+    );
 
   // 100% Arabic defaults when paper is Arabic to prevent Bengali text leakage
   const institutionDisplay = isArabicSubject && (!headerConfig.institutionName || hasBengali(headerConfig.institutionName))
@@ -212,7 +232,7 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
           className="font-serif proshno-subject-grade-row text-slate-800"
         >
           <span className="flex items-center gap-1">
-            <span>বিষয়:</span>
+            <span>{isEnglishSubject ? 'Subject:' : 'বিষয়:'}</span>
             <span
               contentEditable
               suppressContentEditableWarning
@@ -226,14 +246,14 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
 
           {headerConfig.subjectCode && (
             <span className="text-slate-600 font-mono text-xs">
-              (বিষয় কোড: {headerConfig.subjectCode})
+              ({isEnglishSubject ? 'Subject Code:' : 'বিষয় কোড:'} {headerConfig.subjectCode})
             </span>
           )}
 
           <span className="text-slate-400">|</span>
 
           <span className="flex items-center gap-1">
-            <span>শ্রেণি:</span>
+            <span>{isEnglishSubject ? 'Class:' : 'শ্রেণি:'}</span>
             <span
               contentEditable
               suppressContentEditableWarning
@@ -241,7 +261,9 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
               className="font-bold outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded px-1 transition-colors cursor-text"
               title="ক্লিক করে শ্রেণি এডিট করুন"
             >
-              {headerConfig.grade || 'দাখিল ৯ম শ্রেণি'}
+              {isEnglishSubject && hasBengali(headerConfig.grade)
+                ? toEnglishGradeLabel(headerConfig.grade, headerConfig.educationStream)
+                : headerConfig.grade || (isEnglishSubject ? 'Class 10' : 'দাখিল ৯ম শ্রেণি')}
             </span>
           </span>
         </div>
@@ -264,7 +286,7 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
         className="flex items-center justify-between font-serif proshno-meta-row text-slate-900"
       >
         <div className="flex items-center gap-1">
-          <span>{isArabicSubject ? 'الوقت :' : 'সময়:'}</span>
+          <span>{isArabicSubject ? 'الوقت :' : isEnglishSubject ? 'Time:' : 'সময়:'}</span>
           <span
             contentEditable
             suppressContentEditableWarning
@@ -298,7 +320,9 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
         ) : null}
 
         <div className="flex items-center gap-1">
-          <span>{isArabicSubject ? 'الدرجات الكاملة :' : 'পূর্ণমান:'}</span>
+          <span>
+            {isArabicSubject ? 'الدرجات الكاملة :' : isEnglishSubject ? 'Full Marks:' : 'পূর্ণমান:'}
+          </span>
           <span
             contentEditable
             suppressContentEditableWarning
