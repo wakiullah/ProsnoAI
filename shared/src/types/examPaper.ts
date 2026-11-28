@@ -56,6 +56,7 @@ export interface LayoutConfig {
   showMarks: boolean;
   showAnswers?: boolean; // For teacher solution sheet
   showOmrGuide?: boolean;
+  allowQuestionSplit?: boolean; // Default true: flow sub-items across columns/pages instead of leaving blank space
 }
 
 export interface ExamSetEntry {

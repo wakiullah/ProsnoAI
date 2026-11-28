@@ -28,7 +28,7 @@ import {
 } from 'proshno-shared';
 import { EditableHeader } from './EditableHeader';
 import { EditableSectionBanner } from './EditableSectionBanner';
-import { EditableQuestionItem } from './EditableQuestionItem';
+import { EditableQuestionItem, QuestionSliceRange } from './EditableQuestionItem';
 import { PlusCircle, Sparkles, FileText, Wand2, ZoomIn, ZoomOut, Maximize2, Check, Underline } from 'lucide-react';
 import { calculateSmartAutoFit } from '../../services/pageAutoFitService';
 import { useMobileKeyboardOpen } from '../../hooks/useMobileKeyboardOpen';
@@ -78,6 +78,7 @@ type CanvasDocItem =
       id: string;
       question: QuestionData;
       globalIndex: number;
+      sliceRange?: QuestionSliceRange;
     }
   | {
       type: 'unassigned-banner';
@@ -104,6 +105,7 @@ function SortableQuestionRow({
   lineHeight,
   isSelected,
   onSelect,
+  sliceRange,
 }: {
   question: QuestionData;
   questionIndex: number;
@@ -118,10 +120,11 @@ function SortableQuestionRow({
   lineHeight?: number;
   isSelected?: boolean;
   onSelect?: () => void;
+  sliceRange?: QuestionSliceRange;
 }) {
   const id = question._id || `q-${globalIndex}`;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+    useSortable({ id, disabled: Boolean(sliceRange?.isContinuation) });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -132,7 +135,11 @@ function SortableQuestionRow({
   };
 
   return (
-    <div ref={setNodeRef} data-canvas-q-idx={questionIndex} style={style}>
+    <div
+      ref={sliceRange?.isContinuation ? undefined : setNodeRef}
+      data-canvas-q-idx={questionIndex}
+      style={style}
+    >
       <EditableQuestionItem
         question={question}
         globalIndex={globalIndex}
@@ -143,11 +150,12 @@ function SortableQuestionRow({
         onDuplicate={onDuplicate}
         onAssignSection={onAssignSection}
         onEditNasrulMadroos={onEditNasrulMadroos}
-        dragAttributes={attributes}
-        dragListeners={listeners}
+        dragAttributes={sliceRange?.isContinuation ? undefined : attributes}
+        dragListeners={sliceRange?.isContinuation ? undefined : listeners}
         lineHeight={lineHeight}
         isSelected={isSelected}
         onSelect={onSelect}
+        sliceRange={sliceRange}
       />
     </div>
   );
@@ -201,10 +209,19 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
   const zoomAnimFrameRef = useRef<number | null>(null);
   const numberingFormat: NumberingFormat = layoutConfig.numberingFormat || 'bn';
   const isTwoCol = layoutConfig.columns === 2;
+  const allowQuestionSplit = layoutConfig.allowQuestionSplit !== false;
   const isArabicPaper =
     layoutConfig.numberingFormat === 'ar' ||
     Boolean(headerConfig.subject?.includes('আরবি')) ||
-    Boolean(headerConfig.subject?.includes('العربية'));
+    Boolean(headerConfig.subject?.includes('العربية')) ||
+    Boolean(headerConfig.subject?.includes('القرآن')) ||
+    Boolean(headerConfig.subject?.includes('الحديث')) ||
+    Boolean(headerConfig.subject?.includes('الفقه')) ||
+    headerConfig.subjectCode === '২০১' ||
+    headerConfig.subjectCode === '২০২' ||
+    headerConfig.subjectCode === '٢٠٢' ||
+    headerConfig.subjectCode === '২০৩' ||
+    headerConfig.subjectCode === '২০৪';
 
   const selectedArabicFont = layoutConfig.arabicFont || 'Traditional Arabic';
   const arabicFontFamily = `'${selectedArabicFont}', 'Traditional Arabic', 'Noto Naskh Arabic', 'Lateef', serif`;
@@ -462,10 +479,12 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
     innerHeight: number;
     headerHeight: number;
     itemHeights: Record<string, number>;
+    partHeights: Record<string, { header: number; items: number[] }>;
   }>({
     innerHeight: fallbackInnerHeightPx,
     headerHeight: 150,
     itemHeights: {},
+    partHeights: {},
   });
 
   const measureLayout = React.useCallback(() => {
@@ -481,12 +500,30 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
       : 150;
 
     const nextHeights: Record<string, number> = {};
+    const nextPartHeights: Record<string, { header: number; items: number[] }> = {};
     const nodes = container.querySelectorAll<HTMLElement>('[data-measure-id]');
     nodes.forEach((node) => {
       const id = node.dataset.measureId;
       if (id) {
         // Use exact fractional CSS pixel height (immune to integer offsetHeight rounding drift)
-        nextHeights[id] = node.getBoundingClientRect().height;
+        const totalH = node.getBoundingClientRect().height;
+        nextHeights[id] = totalH;
+
+        const partNodes = node.querySelectorAll<HTMLElement>('[data-measure-part^="item-"]');
+        if (partNodes.length >= 2) {
+          const headerEl = node.querySelector<HTMLElement>('[data-measure-part="header"]');
+          const itemsArr: number[] = [];
+          let sumItems = 0;
+          partNodes.forEach((pEl) => {
+            const ph = pEl.getBoundingClientRect().height + 6; // include vertical item gap
+            itemsArr.push(ph);
+            sumItems += ph;
+          });
+          const headerH = headerEl
+            ? headerEl.getBoundingClientRect().height + 10
+            : Math.max(24, totalH - sumItems + 10);
+          nextPartHeights[id] = { header: headerH, items: itemsArr };
+        }
       }
     });
 
@@ -496,8 +533,11 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
       if (sameInner && sameHeader) {
         const prevKeys = Object.keys(prev.itemHeights);
         const nextKeys = Object.keys(nextHeights);
+        const prevPartKeys = Object.keys(prev.partHeights);
+        const nextPartKeys = Object.keys(nextPartHeights);
         if (
           prevKeys.length === nextKeys.length &&
+          prevPartKeys.length === nextPartKeys.length &&
           nextKeys.every(
             (k) => Math.abs((prev.itemHeights[k] ?? -1) - nextHeights[k]) < 0.25
           )
@@ -509,6 +549,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
         innerHeight: nextInnerHeight,
         headerHeight: nextHeaderHeight,
         itemHeights: nextHeights,
+        partHeights: nextPartHeights,
       };
     });
   }, [fallbackInnerHeightPx]);
@@ -590,7 +631,73 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
     for (let i = 0; i < linearItems.length; i++) {
       const item = linearItems[i];
       const itemH = measured.itemHeights[item.id] ?? getFallbackHeight(item);
-      const cap = getPackCapacity(pageList.length);
+      let cap = getPackCapacity(pageList.length);
+
+      const pushToCurrentCol = (docItem: CanvasDocItem, usedH: number) => {
+        if (colIndex === 0) {
+          currentPage.col1.push(docItem);
+        } else {
+          currentPage.col2.push(docItem);
+        }
+        colUsedPx += usedH;
+      };
+
+      // Smart Sub-Item Splitting (Default ON unless disabled globally or per-question keepTogether)
+      const parts =
+        item.type === 'question' && allowQuestionSplit && !item.question.keepTogether
+          ? measured.partHeights[item.id]
+          : undefined;
+
+      if (
+        item.type === 'question' &&
+        parts &&
+        parts.items.length >= 2 &&
+        colUsedPx + itemH > cap
+      ) {
+        let cursor = 0;
+        const totalParts = parts.items.length;
+
+        while (cursor < totalParts) {
+          cap = getPackCapacity(pageList.length);
+          const remaining = cap - colUsedPx;
+          const isFirstSlice = cursor === 0;
+          const baseHeaderH = isFirstSlice ? parts.header : 8;
+
+          // Never orphan a heading: require at least header + first sub-item to fit
+          if (colUsedPx > 0 && baseHeaderH + parts.items[cursor] > remaining) {
+            advanceColumnOrPage();
+            continue;
+          }
+
+          let sliceH = baseHeaderH;
+          let end = cursor;
+          while (end < totalParts) {
+            const nextPartH = parts.items[end];
+            if (end > cursor && sliceH + nextPartH > remaining) {
+              break;
+            }
+            sliceH += nextPartH;
+            end++;
+          }
+
+          const slicedItem: CanvasDocItem = {
+            ...item,
+            id: isFirstSlice ? item.id : `${item.id}__slice_${cursor}`,
+            sliceRange: {
+              start: cursor,
+              end,
+              isContinuation: !isFirstSlice,
+            },
+          };
+
+          pushToCurrentCol(slicedItem, sliceH);
+          cursor = end;
+          if (cursor < totalParts) {
+            advanceColumnOrPage();
+          }
+        }
+        continue;
+      }
 
       // Keep section/unassigned banner attached to its first question when possible
       const isBanner =
@@ -606,12 +713,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
         advanceColumnOrPage();
       }
 
-      if (colIndex === 0) {
-        currentPage.col1.push(item);
-      } else {
-        currentPage.col2.push(item);
-      }
-      colUsedPx += itemH;
+      pushToCurrentCol(item, itemH);
     }
 
     if (
@@ -626,7 +728,9 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
   }, [
     linearItems,
     isTwoCol,
+    allowQuestionSplit,
     measured.itemHeights,
+    measured.partHeights,
     page1ColHeightPx,
     pageNextColHeightPx,
   ]);
@@ -721,6 +825,7 @@ export const A4DocumentCanvas: React.FC<A4DocumentCanvasProps> = ({
           onEditNasrulMadroos={onEditNasrulMadroos}
           lineHeight={effectiveLineHeight}
           isSelected={selectedQuestionIndex === qIdx}
+          sliceRange={item.sliceRange}
           onSelect={
             onSelectQuestion
               ? () => onSelectQuestion(qIdx)

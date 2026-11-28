@@ -1,6 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import 'katex/dist/katex.min.css';
+
+/* Crisp KaTeX inline alignment inside exam papers */
+.proshno-a4-page .katex {
+  font-size: 1.02em;
+}
+.proshno-a4-page .katex-display {
+  margin: 0.35em 0;
+}
 
 /* ══════════════════════════════════════════════════════════════════════
    AUTHENTIC ARABIC FONTS (Locally bundled in public/fonts/)

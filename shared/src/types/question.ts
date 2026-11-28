@@ -88,6 +88,17 @@ export interface WritingBoxConfig {
   cells?: string[][]; // pre-filled characters or symbols (e.g. [['ك', '', 'ث', '', 'ب'], ...])
 }
 
+export interface StimulusImageConfig {
+  url: string; // Base64 Data URL or image URL
+  widthPct?: number; // 25–100 (default 60)
+  caption?: string; // e.g. "চিত্র: ১"
+}
+
+export interface StimulusTableConfig {
+  headers?: string[];
+  rows: string[][];
+}
+
 export interface QuestionData {
   _id?: string;
   userId?: string;
@@ -102,6 +113,10 @@ export interface QuestionData {
   
   // Stimulus or primary question text
   stemOrPassage?: string;
+
+  // Optional stimulus diagram/image & data table (Math, Physics, Chemistry, BGS, etc.)
+  stimulusImage?: StimulusImageConfig;
+  stimulusTable?: StimulusTableConfig;
   
   // For MULTIPLE_COMPLETION_MCQ (i, ii, iii)
   statements?: string[];
@@ -143,6 +158,7 @@ export interface QuestionData {
   customNumber?: string;
   customMarksText?: string;
   pageBreakBefore?: boolean;
+  keepTogether?: boolean; // When true, keep entire question together on next column/page even if smart split is enabled
 
   // Structured Builder Group Tracking (e.g. Nasrul Madroos in-place update without duplication)
   groupId?: string;

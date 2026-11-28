@@ -17,6 +17,7 @@ import {
 import { MultiScriptText } from '../common/MultiScriptText';
 import { EngChartSvg } from './english1st/EngChartSvg';
 import { EngChartData, EngInfoTableData } from './english1st/english1stDefaults';
+import { Eng2SubstitutionTableData } from './english2nd/english2ndDefaults';
 import { QuestionSpacingHandle } from './QuestionSpacingHandle';
 import {
   GripVertical,
@@ -24,7 +25,15 @@ import {
   Copy,
   Wand2,
   BookOpen,
+  Lock,
+  Unlock,
 } from 'lucide-react';
+
+export interface QuestionSliceRange {
+  start: number; // inclusive sub-item index
+  end: number; // exclusive sub-item index
+  isContinuation?: boolean; // true for slice 2+ (hides question header/marks & hover toolbar)
+}
 
 interface EditableQuestionItemProps {
   question: QuestionData;
@@ -42,6 +51,7 @@ interface EditableQuestionItemProps {
   lineHeight?: number;
   isSelected?: boolean;
   onSelect?: () => void;
+  sliceRange?: QuestionSliceRange;
 }
 
 const AR_SUB_LETTERS = ['الف', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي'];
@@ -104,7 +114,9 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
   lineHeight,
   isSelected = false,
   onSelect,
+  sliceRange,
 }) => {
+  const isContinuation = Boolean(sliceRange?.isContinuation);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [liveSpacingTop, setLiveSpacingTop] = useState<number | null>(null);
   const [liveSpacingBottom, setLiveSpacingBottom] = useState<number | null>(null);
@@ -507,7 +519,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
 
       {/* ───────────────── SLEEK HOVER TOOLBAR (Completely ABOVE the question, Never covering text) ───────────────── */}
       {!isMeasuring && (
-        <div className={`absolute ${isRTL ? 'left-1' : 'right-1'} -top-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-white border border-slate-300 shadow-md rounded-lg px-2 py-0.5 flex items-center gap-1.5 z-30 text-[11px] font-sans print:hidden`}>
+        <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} bottom-full pb-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto z-30 print:hidden`}>
+          <div className="bg-white border border-slate-300 shadow-md rounded-lg px-1.5 py-0.5 flex items-center gap-1 text-[10px] font-sans whitespace-nowrap">
           {/* Drag Handle */}
           <div
             {...dragAttributes}
@@ -548,7 +561,7 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
                 title="এই সেকশনের প্রশ্নাবলি একসাথে মডালে এডিট করুন"
               >
                 <BookOpen className="w-3 h-3 text-emerald-700" />
-                <span>মডালে এডিট</span>
+                <span>Edit</span>
               </button>
             )}
 
@@ -562,6 +575,29 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               <Wand2 className="w-3 h-3" />
             </button>
           )}
+
+          {/* Keep Together / Smart Split Toggle */}
+          <button
+            type="button"
+            onClick={() => onUpdate({ ...question, keepTogether: !question.keepTogether })}
+            className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold text-[10px] border transition ${
+              question.keepTogether
+                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+            }`}
+            title={
+              question.keepTogether
+                ? 'এই প্রশ্নটি একসাথে রাখা হয়েছে (ক্লিক করলে স্বয়ংক্রিয়ভাবে কলামে ভাগ হবে)'
+                : 'প্রশ্নটি না ভেঙে পুরোটাই পরের কলাম/পেজে রাখতে ক্লিক করুন'
+            }
+          >
+            {question.keepTogether ? (
+              <Lock className="w-2.5 h-2.5 text-amber-700" />
+            ) : (
+              <Unlock className="w-2.5 h-2.5 text-slate-400" />
+            )}
+            <span>{question.keepTogether ? 'Keep' : 'Auto'}</span>
+          </button>
 
           {/* Duplicate */}
           <button
@@ -597,6 +633,7 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               ))}
             </select>
           )}
+          </div>
         </div>
       )}
 
@@ -1513,87 +1550,132 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           ) : null}
         </div>
       ) : question.groupRole === 'eng1_passage' ? (
-        /* ───────────────── ENGLISH 1ST PAPER READING PASSAGE ───────────────── */
-        <div dir="ltr" className="my-1.5 font-serif text-[0.98em] text-slate-900 space-y-1">
-          <div className="flex items-start gap-2 font-bold">
-            {qNumberDisplay ? <span className="q-number shrink-0">{qNumberDisplay}</span> : null}
-            <span>{question.chapter || 'Read the passage carefully and answer the questions :'}</span>
-          </div>
-          <div
-            contentEditable={isEditingText}
-            data-editable-field="true"
-            suppressContentEditableWarning
-            onBlur={handleStemBlur}
-            className={`text-justify leading-[1.55] whitespace-pre-line outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text ${
-              qNumberDisplay ? 'pl-6' : ''
-            }`}
-          >
-            {question.stemOrPassage}
-          </div>
-        </div>
+        /* ───────────────── ENGLISH 1ST PAPER READING PASSAGE (SPLITTABLE BY PARAGRAPH) ───────────────── */
+        (() => {
+          const paragraphs = (question.stemOrPassage || '').split('\n').filter((p) => p.trim().length > 0);
+          const start = sliceRange ? sliceRange.start : 0;
+          const end = sliceRange ? sliceRange.end : paragraphs.length;
+          const visibleParas = paragraphs.slice(start, end);
+          return (
+            <div dir="ltr" className="my-1.5 font-serif text-[0.98em] text-slate-900 space-y-1">
+              {!isContinuation && (
+                <div data-measure-part="header" className="flex items-start gap-2 font-bold">
+                  {qNumberDisplay ? <span className="q-number shrink-0">{qNumberDisplay}</span> : null}
+                  <span>{question.chapter || 'Read the passage carefully and answer the questions :'}</span>
+                </div>
+              )}
+              {visibleParas.map((para, idx) => {
+                const realIdx = start + idx;
+                return (
+                  <div
+                    key={realIdx}
+                    data-measure-part={`item-${realIdx}`}
+                    contentEditable={isEditingText}
+                    data-editable-field="true"
+                    suppressContentEditableWarning
+                    onBlur={(e) => {
+                      const nextParas = [...paragraphs];
+                      nextParas[realIdx] = e.currentTarget.innerText.trim();
+                      onUpdate({ ...question, stemOrPassage: nextParas.join('\n') });
+                    }}
+                    className={`text-justify leading-[1.55] outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text ${
+                      qNumberDisplay ? 'pl-6' : ''
+                    }`}
+                  >
+                    {para}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()
       ) : question.groupRole === 'eng1_mcq_list' &&
         question.passageQuestions &&
         question.passageQuestions.length > 0 ? (
-        /* ───────────────── ENGLISH 1ST PAPER MCQ LIST (Q.1 / A.) ───────────────── */
-        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1.5">
-          <div className="flex items-start justify-between gap-2 font-bold">
-            <div className="flex items-start gap-2 flex-1 min-w-0">
-              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
-              <span>{question.stemOrPassage || 'Choose the best answer from the alternatives :'}</span>
-            </div>
-            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
-          </div>
-          <div className="pl-6 space-y-1.5">
-            {question.passageQuestions.map((pq, pIdx) => {
-              const letter = String.fromCharCode(97 + pIdx);
-              return (
-                <div key={pq.id || pIdx} className="space-y-0.5">
-                  <div className="flex items-start gap-1.5">
-                    <span className="italic font-semibold shrink-0">({letter})</span>
-                    <span className="font-medium">{pq.questionText}</span>
+        /* ───────────────── ENGLISH 1ST PAPER MCQ LIST (Q.1 / A., SPLITTABLE BY MCQ) ───────────────── */
+        (() => {
+          const allMcqs = question.passageQuestions!;
+          const start = sliceRange ? sliceRange.start : 0;
+          const end = sliceRange ? sliceRange.end : allMcqs.length;
+          const visibleMcqs = allMcqs.slice(start, end);
+          return (
+            <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1.5">
+              {!isContinuation && (
+                <div data-measure-part="header" className="flex items-start justify-between gap-2 font-bold">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+                    <span>{question.stemOrPassage || 'Choose the best answer from the alternatives :'}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 pl-6 text-[0.95em]">
-                    {(pq.options || []).map((opt, oIdx) => (
-                      <div key={oIdx} className="flex items-start gap-1.5">
-                        <span className="italic shrink-0">{opt.label}</span>
-                        <span>{opt.text}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              )}
+              <div className="pl-6 space-y-1.5">
+                {visibleMcqs.map((pq, idx) => {
+                  const pIdx = start + idx;
+                  const letter = String.fromCharCode(97 + pIdx);
+                  return (
+                    <div key={pq.id || pIdx} data-measure-part={`item-${pIdx}`} className="space-y-0.5">
+                      <div className="flex items-start gap-1.5">
+                        <span className="italic font-semibold shrink-0">({letter})</span>
+                        <span className="font-medium">{pq.questionText}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 pl-6 text-[0.95em]">
+                        {(pq.options || []).map((opt, oIdx) => (
+                          <div key={oIdx} className="flex items-start gap-1.5">
+                            <span className="italic shrink-0">{opt.label}</span>
+                            <span>{opt.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()
       ) : question.groupRole === 'eng1_qa_list' &&
         question.subQuestions &&
         question.subQuestions.length > 0 ? (
-        /* ───────────────── ENGLISH 1ST PAPER OPEN Q/A LIST (Q.2, Q.8, Q.9, B.) ───────────────── */
-        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
-          <div className="flex items-start justify-between gap-2 font-bold">
-            <div className="flex items-start gap-2 flex-1 min-w-0">
-              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
-              <span>{question.stemOrPassage || 'Answer the following questions :'}</span>
-            </div>
-            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
-          </div>
-          <div className="pl-6 space-y-0.5">
-            {question.subQuestions.map((sub, sIdx) => (
-              <div key={sIdx} className="flex items-start gap-1.5">
-                <span className="italic shrink-0">({sub.part})</span>
-                <span
-                  contentEditable={isEditingText}
-                  data-editable-field="true"
-                  suppressContentEditableWarning
-                  onBlur={(e) => handleCqPartBlur(sIdx, e)}
-                  className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
-                >
-                  {sub.questionText}
-                </span>
+        /* ───────────────── ENGLISH 1ST PAPER OPEN Q/A LIST (Q.2, Q.8, Q.9, B., SPLITTABLE) ───────────────── */
+        (() => {
+          const allSubs = question.subQuestions!;
+          const start = sliceRange ? sliceRange.start : 0;
+          const end = sliceRange ? sliceRange.end : allSubs.length;
+          const visibleSubs = allSubs.slice(start, end);
+          return (
+            <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
+              {!isContinuation && (
+                <div data-measure-part="header" className="flex items-start justify-between gap-2 font-bold">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+                    <span>{question.stemOrPassage || 'Answer the following questions :'}</span>
+                  </div>
+                  {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+                </div>
+              )}
+              <div className="pl-6 space-y-0.5">
+                {visibleSubs.map((sub, idx) => {
+                  const sIdx = start + idx;
+                  return (
+                    <div key={sIdx} data-measure-part={`item-${sIdx}`} className="flex items-start gap-1.5">
+                      <span className="italic shrink-0">({sub.part})</span>
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                        className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        {sub.questionText}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          );
+        })()
       ) : question.groupRole === 'eng1_cloze' ? (
         /* ───────────────── ENGLISH 1ST PAPER CLOZE TEST (WITH OR WITHOUT CLUES) ───────────────── */
         <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1.5">
@@ -1604,26 +1686,30 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             </div>
             {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
           </div>
-          {question.wordClues && question.wordClues.length > 0 && (
-            <div className="pl-6 my-1">
-              <table className="w-full border-collapse border border-slate-800 text-[0.92em]">
-                <tbody>
-                  {Array.from({ length: Math.ceil(question.wordClues.length / 6) }).map((_, rIdx) => (
-                    <tr key={rIdx}>
-                      {Array.from({ length: 6 }).map((__, cIdx) => (
-                        <td
-                          key={cIdx}
-                          className="border border-slate-800 px-2 py-0.5 text-left"
-                        >
-                          {question.wordClues?.[rIdx * 6 + cIdx] || ''}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {question.wordClues && question.wordClues.length > 0 && (() => {
+            const cols = question.wordClues.length === 10 ? 5 : 6;
+            const rows = Math.ceil(question.wordClues.length / cols);
+            return (
+              <div className="pl-6 my-1">
+                <table className="w-full border-collapse border border-slate-800 text-[0.92em]">
+                  <tbody>
+                    {Array.from({ length: rows }).map((_, rIdx) => (
+                      <tr key={rIdx}>
+                        {Array.from({ length: cols }).map((__, cIdx) => (
+                          <td
+                            key={cIdx}
+                            className="border border-slate-800 px-2 py-0.5 text-center"
+                          >
+                            {question.wordClues?.[rIdx * cols + cIdx] || ''}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
           <div
             contentEditable={isEditingText}
             data-editable-field="true"
@@ -1760,31 +1846,42 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
           })()}
         </div>
       ) : question.groupRole === 'eng1_rearrange' && question.statements ? (
-        /* ───────────────── ENGLISH 1ST PAPER REARRANGING SENTENCES (Q.7 / 06.) ───────────────── */
-        <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
-          <div className="flex items-start justify-between gap-2 font-bold">
-            <div className="flex items-start gap-2 flex-1 min-w-0">
-              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
-              <span>{question.stemOrPassage}</span>
-            </div>
-            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
-          </div>
-          <div className="pl-6 space-y-0.5">
-            {question.statements.map((sent, idx) => {
-              const roman = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
-              const lbl =
-                question.chapter === 'roman'
-                  ? `(${roman[idx] || idx + 1})`
-                  : `(${String.fromCharCode(97 + idx)})`;
-              return (
-                <div key={idx} className="flex items-start gap-2">
-                  <span className="italic shrink-0 min-w-[24px]">{lbl}</span>
-                  <span>{sent}</span>
+        /* ───────────────── ENGLISH 1ST PAPER REARRANGING SENTENCES (Q.7 / 06., SPLITTABLE) ───────────────── */
+        (() => {
+          const allSents = question.statements!;
+          const start = sliceRange ? sliceRange.start : 0;
+          const end = sliceRange ? sliceRange.end : allSents.length;
+          const visibleSents = allSents.slice(start, end);
+          const roman = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+          return (
+            <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
+              {!isContinuation && (
+                <div data-measure-part="header" className="flex items-start justify-between gap-2 font-bold">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+                    <span>{question.stemOrPassage}</span>
+                  </div>
+                  {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              )}
+              <div className="pl-6 space-y-0.5">
+                {visibleSents.map((sent, i) => {
+                  const idx = start + i;
+                  const lbl =
+                    question.chapter === 'roman'
+                      ? `(${roman[idx] || idx + 1})`
+                      : `(${String.fromCharCode(97 + idx)})`;
+                  return (
+                    <div key={idx} data-measure-part={`item-${idx}`} className="flex items-start gap-2">
+                      <span className="italic shrink-0 min-w-[24px]">{lbl}</span>
+                      <span>{sent}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()
       ) : question.groupRole === 'eng1_writing' ? (
         /* ───────────────── ENGLISH 1ST PAPER WRITING / SUMMARY / STORY / PARAGRAPH / LETTER ───────────────── */
         <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
@@ -1829,6 +1926,165 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             return chart ? <EngChartSvg data={chart} /> : null;
           })()}
         </div>
+      ) : question.groupRole === 'eng2_substitution_table' ? (
+        /* ───────────────── ENGLISH 2ND PAPER SUBSTITUTION TABLE (MERGED MIDDLE VERB COLUMN) ───────────────── */
+        <div dir="ltr" className="my-2 font-serif text-[0.96em] text-slate-900 space-y-1.5">
+          <div className="flex items-start justify-between gap-2 font-bold">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+              <span>{question.topic}</span>
+            </div>
+            {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+          </div>
+          {(() => {
+            let tbl: Eng2SubstitutionTableData | null = null;
+            try {
+              if (question.explanation) tbl = JSON.parse(question.explanation);
+            } catch {
+              tbl = null;
+            }
+            if (!tbl) return null;
+            const rowCount = Math.max(tbl.colLeft.length, tbl.colRight.length);
+            return (
+              <div className="pl-6">
+                <table className="w-full border-collapse border border-slate-800 text-[0.93em]">
+                  <tbody>
+                    {Array.from({ length: rowCount }).map((_, idx) => (
+                      <tr key={idx}>
+                        <td className="border border-slate-800 px-2 py-1 align-top w-[26%]">
+                          <span className="mr-1">({String.fromCharCode(97 + idx)})</span>
+                          {tbl!.colLeft[idx] || ''}
+                        </td>
+                        {idx === 0 && (
+                          <td
+                            rowSpan={rowCount}
+                            className="border border-slate-800 px-2.5 py-1 text-center align-middle font-semibold w-[12%]"
+                          >
+                            {(tbl!.colMiddleVerbs || [])
+                              .filter((v) => v.trim())
+                              .map((v, vi) => (
+                                <div key={vi} className="leading-[1.6]">
+                                  {v}
+                                </div>
+                              ))}
+                          </td>
+                        )}
+                        <td className="border border-slate-800 px-2 py-1 align-top">
+                          {tbl!.colRight[idx] || ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </div>
+      ) : question.groupRole === 'eng2_phrase_box_list' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── HSC/ALIM ENGLISH 2ND Q.3 PHRASE BOX + 10 SENTENCES (SPLITTABLE) ───────────────── */
+        (() => {
+          const allSubs = question.subQuestions!;
+          const start = sliceRange ? sliceRange.start : 0;
+          const end = sliceRange ? sliceRange.end : allSubs.length;
+          const visibleSubs = allSubs.slice(start, end);
+          const clues = question.wordClues || [];
+          const cols = clues.length <= 10 ? 5 : 6;
+          return (
+            <div dir="ltr" className="my-2 font-serif text-[0.96em] text-slate-900 space-y-1.5">
+              {!isContinuation && (
+                <div data-measure-part="header" className="space-y-1.5">
+                  <div className="flex items-start justify-between gap-2 font-bold">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+                      <span>{question.topic}</span>
+                    </div>
+                    {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+                  </div>
+                  {clues.length > 0 && (
+                    <div className="pl-6">
+                      <table className="w-full border-collapse border border-slate-800 text-[0.92em]">
+                        <tbody>
+                          {Array.from({ length: Math.ceil(clues.length / cols) }).map((_, rIdx) => (
+                            <tr key={rIdx}>
+                              {Array.from({ length: cols }).map((__, cIdx) => (
+                                <td key={cIdx} className="border border-slate-800 px-1.5 py-0.5 text-center">
+                                  {clues[rIdx * cols + cIdx] || ''}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="pl-6 space-y-0.5">
+                {visibleSubs.map((sub, i) => {
+                  const sIdx = start + i;
+                  return (
+                    <div key={sIdx} data-measure-part={`item-${sIdx}`} className="flex items-start gap-1.5">
+                      <span className="italic shrink-0">({sub.part})</span>
+                      <span
+                        contentEditable={isEditingText}
+                        data-editable-field="true"
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCqPartBlur(sIdx, e)}
+                        className="flex-1 outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded cursor-text"
+                      >
+                        {sub.questionText}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()
+      ) : question.groupRole === 'eng2_synonym_antonym' &&
+        question.subQuestions &&
+        question.subQuestions.length > 0 ? (
+        /* ───────────────── HSC/ALIM ENGLISH 2ND Q.11 SYNONYM & ANTONYM (UNDERLINED PASSAGE + SPLITTABLE LIST) ───────────────── */
+        (() => {
+          const allSubs = question.subQuestions!;
+          const start = sliceRange ? sliceRange.start : 0;
+          const end = sliceRange ? sliceRange.end : allSubs.length;
+          const visibleSubs = allSubs.slice(start, end);
+          return (
+            <div dir="ltr" className="my-2 font-serif text-[0.96em] text-slate-900 space-y-1.5">
+              {!isContinuation && (
+                <div data-measure-part="header" className="space-y-1.5">
+                  <div className="flex items-start justify-between gap-2 font-bold">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      {qNumberDisplay ? <span className="q-number shrink-0 min-w-[20px]">{qNumberDisplay}</span> : null}
+                      <span>{question.topic}</span>
+                    </div>
+                    {marksDisplay ? <span className="q-marks shrink-0 font-bold ps-2">{marksDisplay}</span> : null}
+                  </div>
+                  {question.stemOrPassage && (
+                    <div
+                      className="pl-6 text-justify leading-[1.55]"
+                      dangerouslySetInnerHTML={{ __html: question.stemOrPassage }}
+                    />
+                  )}
+                </div>
+              )}
+              <div className="pl-6 space-y-0.5">
+                {visibleSubs.map((sub, i) => {
+                  const sIdx = start + i;
+                  return (
+                    <div key={sIdx} data-measure-part={`item-${sIdx}`} className="flex items-start gap-1.5">
+                      <span className="italic shrink-0">({sub.part})</span>
+                      <span>{sub.questionText}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()
       ) : question.groupRole === 'eng1_poem_theme' ? (
         /* ───────────────── HSC/ALIM ENGLISH 1ST PAPER POEM THEME (Q.11) ───────────────── */
         <div dir="ltr" className="my-2 font-serif text-[0.97em] text-slate-900 space-y-1">
@@ -2594,6 +2850,56 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
               <MultiScriptText text={parsedMultiLine.bodyText} />
             </div>
           )}
+
+          {/* ───────────────── OPTIONAL STIMULUS IMAGE (Diagram / Circuit / Graph) ───────────────── */}
+          {!isContinuation && question.stimulusImage?.url && (
+            <div className="my-1.5 flex flex-col items-center">
+              <img
+                src={question.stimulusImage.url}
+                alt={question.stimulusImage.caption || 'চিত্র'}
+                style={{ width: `${question.stimulusImage.widthPct ?? 55}%` }}
+                className="max-h-56 object-contain"
+              />
+              {question.stimulusImage.caption && (
+                <div className="text-[0.84em] text-slate-700 mt-0.5 font-serif">
+                  <MultiScriptText text={question.stimulusImage.caption} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ───────────────── OPTIONAL STIMULUS DATA TABLE (Statistics / Chemistry / Physics) ───────────────── */}
+          {!isContinuation &&
+            question.stimulusTable &&
+            question.stimulusTable.rows &&
+            question.stimulusTable.rows.length > 0 && (
+              <div className={`my-1.5 ${isRTL ? 'pr-3' : 'pl-4'}`}>
+                <table className="w-full border-collapse border border-slate-700 text-[0.88em] font-serif text-center">
+                  {question.stimulusTable.headers && question.stimulusTable.headers.length > 0 && (
+                    <thead>
+                      <tr className="bg-slate-50 font-bold text-slate-900">
+                        {question.stimulusTable.headers.map((hdr, hIdx) => (
+                          <th key={hIdx} className="border border-slate-700 px-1.5 py-0.5 font-bold">
+                            <MultiScriptText text={hdr} />
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                  )}
+                  <tbody>
+                    {question.stimulusTable.rows.map((row, rIdx) => (
+                      <tr key={rIdx}>
+                        {row.map((cell, cIdx) => (
+                          <td key={cIdx} className="border border-slate-700 px-1.5 py-0.5 text-slate-900">
+                            <MultiScriptText text={cell} />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
         </>
       )}
 
@@ -2678,12 +2984,16 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
         })()}
 
       {/* ───────────────── WORD CLUES BOX (صندوق الكلمات - শূন্যস্থান পূরণের শব্দ বাক্স) ───────────────── */}
-      {!parsedMultiLine && !question.groupRole?.startsWith('eng1_') && renderWordCluesTable()}
+      {!parsedMultiLine &&
+        !question.groupRole?.startsWith('eng1_') &&
+        !question.groupRole?.startsWith('eng2_') &&
+        renderWordCluesTable()}
 
-      {/* ───────────────── SUB-QUESTIONS (Arabic Comprehension & CQ Parts) ───────────────── */}
+      {/* ───────────────── SUB-QUESTIONS (Arabic Comprehension & CQ Parts — SPLITTABLE) ───────────────── */}
       {!question.groupRole?.startsWith('bangla2nd_') &&
         !question.groupRole?.startsWith('junior_quran_') &&
         !question.groupRole?.startsWith('eng1_') &&
+        !question.groupRole?.startsWith('eng2_') &&
         question.groupRole !== 'alim_fiqh_item' &&
         question.groupRole !== 'alim_ar2_q12_ar_bn' &&
         question.groupRole !== 'alim_ar2_q13_bn_ar' &&
@@ -2693,15 +3003,22 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
         question.groupRole !== 'hadith_kha_item' &&
         question.groupRole !== 'alim_hadith_group_a_item' &&
         question.subQuestions &&
-        question.subQuestions.length > 0 && (
+        question.subQuestions.length > 0 && (() => {
+          const allSubs = question.subQuestions!;
+          const start = sliceRange ? sliceRange.start : 0;
+          const end = sliceRange ? sliceRange.end : allSubs.length;
+          const visibleSubs = allSubs.slice(start, end);
+          return (
         <div className={`pt-1.5 space-y-1 text-[0.92em] font-serif ${isRTL ? 'pr-2' : 'pl-4'}`}>
-          {question.subQuestions.map((sub, sIdx) => {
+          {visibleSubs.map((sub, i) => {
+            const sIdx = start + i;
             const isParagraphSub =
               question.typology === 'TARJAMA_TASHREEH' || (sub.questionText?.length || 0) > 140;
             const displayPart = getSubPartLabel(sub.part, sIdx, isRTL);
             return (
               <div
                 key={sIdx}
+                data-measure-part={`item-${sIdx}`}
                 className="flex items-start gap-1 text-slate-800 w-full"
               >
                 <div className="flex items-start gap-1 flex-1 min-w-0 w-full">
@@ -2746,7 +3063,8 @@ export const EditableQuestionItem: React.FC<EditableQuestionItemProps> = ({
             );
           })}
         </div>
-      )}
+          );
+        })()}
 
       {/* ───────────────── TAHQEEQ & SIGHA TABLE (মাদ্রাসা শব্দ বিশ্লেষণ ছক) ───────────────── */}
       {question.typology === 'TAHQEEQ_SIGHA' && question.tahqeeqWords && question.tahqeeqWords.length > 0 && (

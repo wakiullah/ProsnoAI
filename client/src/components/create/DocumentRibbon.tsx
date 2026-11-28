@@ -8,6 +8,14 @@ import {
   isSscDakhilEnglish1st,
 } from './english1st/english1stDefaults';
 import {
+  HscEng2Section,
+  SscEng2Section,
+  isHscAlimEnglish2nd,
+  isSscDakhilEnglish2nd,
+} from './english2nd/english2ndDefaults';
+import { getStandardSubjectConfig } from './standardCqMcq/standardCqMcqConfig';
+import { toBengaliNumber } from './bangla1st/bangla1stDefaults';
+import {
   EducationStream,
   HeaderPreset,
   InstitutionHeaderConfig,
@@ -120,6 +128,11 @@ interface DocumentRibbonProps {
   alimHadithCount?: number;
   onOpenSscEng1Modal?: (section: SscEng1Section) => void;
   onOpenHscEng1Modal?: (section: HscEng1Section) => void;
+  onOpenSscEng2Modal?: (section: SscEng2Section) => void;
+  onOpenHscEng2Modal?: (section: HscEng2Section) => void;
+  onOpenStandardCqModal?: () => void;
+  onOpenStandardSqModal?: () => void;
+  onOpenStandardMcqModal?: () => void;
   onOpenSettingsModal?: () => void;
   onAutoRenumber?: () => void;
   onStripAllHarakat?: () => void;
@@ -262,6 +275,11 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
   alimHadithCount = 0,
   onOpenSscEng1Modal,
   onOpenHscEng1Modal,
+  onOpenSscEng2Modal,
+  onOpenHscEng2Modal,
+  onOpenStandardCqModal,
+  onOpenStandardSqModal,
+  onOpenStandardMcqModal,
   onAutoRenumber,
   onStripAllHarakat,
   onAutoFitPage,
@@ -369,6 +387,21 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
     headerConfig.subjectCode,
     headerConfig.grade
   );
+  const isHscAlimEng2Paper = isHscAlimEnglish2nd(
+    headerConfig.subject,
+    headerConfig.subjectCode,
+    headerConfig.grade
+  );
+  const isSscDakhilEng2Paper = isSscDakhilEnglish2nd(
+    headerConfig.subject,
+    headerConfig.subjectCode,
+    headerConfig.grade
+  );
+  const standardSubjectConfig = getStandardSubjectConfig(
+    headerConfig.subject,
+    headerConfig.subjectCode,
+    headerConfig.grade
+  );
 
   const isBangla1stPaper =
     !isArabicPaper &&
@@ -380,6 +413,8 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
     !isAlimHadithPaper &&
     !isSscDakhilEng1Paper &&
     !isHscAlimEng1Paper &&
+    !isSscDakhilEng2Paper &&
+    !isHscAlimEng2Paper &&
     Boolean(
       headerConfig.subject?.includes('বাংলা ১ম') ||
       headerConfig.subject?.includes('বাংলা প্রথম') ||
@@ -781,6 +816,30 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
                 ))}
               </div>
 
+              {/* 3b. SMART FLOW / KEEP TOGETHER TOGGLE */}
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs shrink-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdateLayout({
+                      allowQuestionSplit: layoutConfig.allowQuestionSplit === false ? true : false,
+                    })
+                  }
+                  className={`px-2.5 py-0.5 rounded-lg text-xs font-bold transition ${
+                    layoutConfig.allowQuestionSplit !== false
+                      ? 'bg-emerald-700 text-white shadow-2xs'
+                      : 'bg-amber-100 text-amber-900 border border-amber-300'
+                  }`}
+                  title={
+                    layoutConfig.allowQuestionSplit !== false
+                      ? 'স্মার্ট ফ্লো চালু: বড় প্রশ্নের যতটুকু ধরে ততটুকু বসিয়ে বাকিটা পরের কলামে যাবে (ক্লিক করলে প্রশ্ন অবিভাজ্য থাকবে)'
+                      : 'প্রশ্ন একসাথে রাখুন চালু: বড় প্রশ্ন জায়গা না ধরলে পুরোটাই পরের কলামে যাবে (ক্লিক করলে স্মার্ট ফ্লো চালু হবে)'
+                  }
+                >
+                  {layoutConfig.allowQuestionSplit !== false ? 'অটো-ফ্লো (চালু)' : 'প্রশ্ন একসাথে'}
+                </button>
+              </div>
+
               {/* 4. MARGIN STEPPER (Min 4mm to Max 30mm) */}
               <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2 py-1 shadow-2xs shrink-0">
                 <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
@@ -1009,7 +1068,131 @@ export const DocumentRibbon: React.FC<DocumentRibbonProps> = ({
         {/* ── TAB 2: INSERT (Add Question Types & Exam Sections) ── */}
         {activeTab === 'insert' && (
           <div className="flex items-center gap-2 flex-wrap">
-            {isHscAlimEng1Paper ? (
+            {isHscAlimEng2Paper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">
+                  HSC / Alim English 2nd Paper:
+                </span>
+                {onOpenHscEng2Modal && (
+                  <>
+                    {(
+                      [
+                        { id: 'q1_4_grammar', label: '+ Q.1–4 Grammar (20)', cls: 'bg-indigo-700 hover:bg-indigo-800' },
+                        { id: 'q5_8_grammar', label: '+ Q.5–8 Grammar (20)', cls: 'bg-blue-700 hover:bg-blue-800' },
+                        { id: 'q9_12_grammar', label: '+ Q.9–12 Grammar (20)', cls: 'bg-sky-700 hover:bg-sky-800' },
+                        { id: 'q13_16_comp', label: '+ Q.13–16 Composition (40)', cls: 'bg-emerald-700 hover:bg-emerald-800' },
+                      ] as const
+                    ).map((btn) => (
+                      <button
+                        key={btn.id}
+                        type="button"
+                        onClick={() => onOpenHscEng2Modal(btn.id)}
+                        className={`flex items-center gap-1 px-3 py-1.5 ${btn.cls} text-white rounded-xl font-bold transition shadow-xs`}
+                      >
+                        <span>{btn.label}</span>
+                      </button>
+                    ))}
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ Spacer</span>
+                </button>
+              </>
+            ) : isSscDakhilEng2Paper ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">
+                  English 2nd Paper (Class 6–10):
+                </span>
+                {onOpenSscEng2Modal && (
+                  <>
+                    {(
+                      [
+                        { id: 'q1_3_grammar', label: '+ Q.1–3 Cloze, Table & Verbs (25)', cls: 'bg-indigo-700 hover:bg-indigo-800' },
+                        { id: 'q4_5_grammar', label: '+ Q.4–5 Changing & Tag Qs (15)', cls: 'bg-blue-700 hover:bg-blue-800' },
+                        { id: 'q6_9_grammar', label: '+ Q.6–9 Suffix, Prep & Punct (20)', cls: 'bg-sky-700 hover:bg-sky-800' },
+                        { id: 'q10_12_writing', label: '+ Q.10–12 Part B Writing (40)', cls: 'bg-emerald-700 hover:bg-emerald-800' },
+                      ] as const
+                    ).map((btn) => (
+                      <button
+                        key={btn.id}
+                        type="button"
+                        onClick={() => onOpenSscEng2Modal(btn.id)}
+                        className={`flex items-center gap-1 px-3 py-1.5 ${btn.cls} text-white rounded-xl font-bold transition shadow-xs`}
+                      >
+                        <span>{btn.label}</span>
+                      </button>
+                    ))}
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ Spacer</span>
+                </button>
+              </>
+            ) : standardSubjectConfig ? (
+              <>
+                <span className="text-[11px] font-bold text-slate-500">
+                  {standardSubjectConfig.label}:
+                </span>
+                {onOpenStandardCqModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenStandardCqModal}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold transition shadow-xs"
+                  >
+                    <span>
+                      + সৃজনশীল ({toBengaliNumber(standardSubjectConfig.cqTotalMarks)})
+                    </span>
+                  </button>
+                )}
+                {onOpenStandardSqModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenStandardSqModal}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold transition shadow-xs ${
+                      standardSubjectConfig.hasShortQuestions
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                        : 'bg-white hover:bg-amber-50 border border-amber-300 text-amber-900'
+                    }`}
+                  >
+                    <span>
+                      + সংক্ষিপ্ত প্রশ্ন
+                      {standardSubjectConfig.hasShortQuestions
+                        ? ` (${toBengaliNumber(standardSubjectConfig.sqTotalMarks)})`
+                        : ''}
+                    </span>
+                  </button>
+                )}
+                {onOpenStandardMcqModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenStandardMcqModal}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl font-bold transition shadow-xs"
+                  >
+                    <span>
+                      + বহুনির্বাচনি ({toBengaliNumber(standardSubjectConfig.mcqCount)})
+                    </span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onInsertQuestion('SPACER')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 rounded-xl font-bold transition shadow-2xs"
+                >
+                  <MoveVertical className="w-3.5 h-3.5 text-amber-600" />
+                  <span>+ Spacer</span>
+                </button>
+              </>
+            ) : isHscAlimEng1Paper ? (
               <>
                 <span className="text-[11px] font-bold text-slate-500">
                   HSC / Alim English 1st Paper:

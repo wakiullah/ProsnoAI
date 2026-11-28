@@ -307,7 +307,7 @@ export function generateQuestionPaperHtml(paper: ExamPaperData, activeSetName?: 
 
     /* Question Formatting */
     .question-block {
-      break-inside: avoid;
+      break-inside: ${layoutConfig.allowQuestionSplit !== false ? 'auto' : 'avoid'};
       margin-bottom: 12px;
       padding-bottom: 6px;
     }

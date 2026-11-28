@@ -8,6 +8,14 @@ import {
   isSscDakhilEnglish1st,
 } from './english1st/english1stDefaults';
 import {
+  HscEng2Section,
+  SscEng2Section,
+  isHscAlimEnglish2nd,
+  isSscDakhilEnglish2nd,
+} from './english2nd/english2ndDefaults';
+import { getStandardSubjectConfig } from './standardCqMcq/standardCqMcqConfig';
+import { toBengaliNumber } from './bangla1st/bangla1stDefaults';
+import {
   PlusCircle,
   Sliders,
   FileText,
@@ -108,6 +116,11 @@ interface MobileBottomDockProps {
   alimHadithCount?: number;
   onOpenSscEng1Modal?: (section: SscEng1Section) => void;
   onOpenHscEng1Modal?: (section: HscEng1Section) => void;
+  onOpenSscEng2Modal?: (section: SscEng2Section) => void;
+  onOpenHscEng2Modal?: (section: HscEng2Section) => void;
+  onOpenStandardCqModal?: () => void;
+  onOpenStandardSqModal?: () => void;
+  onOpenStandardMcqModal?: () => void;
   openInsertTrigger?: number;
 }
 
@@ -177,6 +190,11 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
   alimHadithCount = 0,
   onOpenSscEng1Modal,
   onOpenHscEng1Modal,
+  onOpenSscEng2Modal,
+  onOpenHscEng2Modal,
+  onOpenStandardCqModal,
+  onOpenStandardSqModal,
+  onOpenStandardMcqModal,
   openInsertTrigger = 0,
 }) => {
   const [activeSheet, setActiveSheet] = useState<MobileSheetTab>(null);
@@ -283,6 +301,21 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
     headerConfig.subjectCode,
     headerConfig.grade
   );
+  const isHscAlimEng2 = isHscAlimEnglish2nd(
+    headerConfig.subject,
+    headerConfig.subjectCode,
+    headerConfig.grade
+  );
+  const isSscDakhilEng2 = isSscDakhilEnglish2nd(
+    headerConfig.subject,
+    headerConfig.subjectCode,
+    headerConfig.grade
+  );
+  const standardSubjectConfig = getStandardSubjectConfig(
+    headerConfig.subject,
+    headerConfig.subjectCode,
+    headerConfig.grade
+  );
 
   const isBangla1st =
     !isArabicPaper &&
@@ -294,6 +327,8 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
     !isAlimHadith &&
     !isSscDakhilEng1 &&
     !isHscAlimEng1 &&
+    !isSscDakhilEng2 &&
+    !isHscAlimEng2 &&
     ((headerConfig.subject || '').includes('বাংলা ১ম') ||
       (headerConfig.subject || '').includes('বাংলা প্রথম') ||
       (headerConfig.subject || '').includes('সাহিত্যপাঠ') ||
@@ -1222,8 +1257,120 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
               </div>
             )}
 
+            {/* SSC / Dakhil English 2nd Paper (Class 6-10) */}
+            {isSscDakhilEng2 && onOpenSscEng2Modal && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-blue-800 uppercase">
+                  English Second Paper (Class 6–10)
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {(
+                    [
+                      { id: 'q1_3_grammar', label: '+ Q.1–3: Cloze, Table & Verbs (25)' },
+                      { id: 'q4_5_grammar', label: '+ Q.4–5: Changing & Tag Qs (15)' },
+                      { id: 'q6_9_grammar', label: '+ Q.6–9: Suffix, Prep & Punct (20)' },
+                      { id: 'q10_12_writing', label: '+ Q.10–12: Part B Writing (40)' },
+                    ] as const
+                  ).map((btn) => (
+                    <button
+                      key={btn.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenSscEng2Modal(btn.id);
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold text-left active:scale-98"
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* HSC / Alim English 2nd Paper */}
+            {isHscAlimEng2 && onOpenHscEng2Modal && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-indigo-800 uppercase">
+                  HSC / Alim English Second Paper
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {(
+                    [
+                      { id: 'q1_4_grammar', label: '+ Q.1–4: Articles, Prep, Phrases & Clauses (20)' },
+                      { id: 'q5_8_grammar', label: '+ Q.5–8: Verbs, Changing, Narration & Pronoun (20)' },
+                      { id: 'q9_12_grammar', label: '+ Q.9–12: Modifiers, Connectors, Syn/Ant & Punct (20)' },
+                      { id: 'q13_16_comp', label: '+ Q.13–16: Part B Composition (40)' },
+                    ] as const
+                  ).map((btn) => (
+                    <button
+                      key={btn.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenHscEng2Modal(btn.id);
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold text-left active:scale-98"
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Standard CQ + SQ + MCQ Subjects (Math, Physics, Chemistry, BGS, Islam, Islamic History) */}
+            {standardSubjectConfig && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-emerald-800 uppercase">
+                  {standardSubjectConfig.label} — প্রশ্ন যুক্ত করুন
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {onOpenStandardCqModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenStandardCqModal();
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold text-left active:scale-98"
+                    >
+                      + সৃজনশীল প্রশ্ন ({toBengaliNumber(standardSubjectConfig.cqTotalMarks)} নম্বর)
+                    </button>
+                  )}
+                  {onOpenStandardSqModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenStandardSqModal();
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold text-left active:scale-98"
+                    >
+                      + সংক্ষিপ্ত প্রশ্ন
+                      {standardSubjectConfig.hasShortQuestions
+                        ? ` (${toBengaliNumber(standardSubjectConfig.sqTotalMarks)} নম্বর)`
+                        : ' (ঐচ্ছিক)'}
+                    </button>
+                  )}
+                  {onOpenStandardMcqModal && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSheet(null);
+                        onOpenStandardMcqModal();
+                      }}
+                      className="px-3.5 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold text-left active:scale-98"
+                    >
+                      + বহুনির্বাচনি ({toBengaliNumber(standardSubjectConfig.mcqCount)} নম্বর)
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Standard Question Typologies (Hidden when dedicated subject modals apply) */}
-            {!isBangla1st && !isBangla2nd && !isDakhilAqaidFiqh && !isAlimFiqh && !isDakhilQuran && !isDakhilJuniorQuran && !isAlimQuran && !isDakhilHadith && !isAlimHadith && !isSscDakhilEng1 && !isHscAlimEng1 ? (
+            {!isBangla1st && !isBangla2nd && !isDakhilAqaidFiqh && !isAlimFiqh && !isDakhilQuran && !isDakhilJuniorQuran && !isAlimQuran && !isDakhilHadith && !isAlimHadith && !isSscDakhilEng1 && !isHscAlimEng1 && !isSscDakhilEng2 && !isHscAlimEng2 && !standardSubjectConfig ? (
               <div className="space-y-2">
                 <p className="text-[11px] font-bold text-slate-500 uppercase">সাধারণ প্রশ্ন ও বিভাগ</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -1423,6 +1570,35 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Smart Flow / Keep Together Toggle */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500">কলাম / পেজ ফ্লো</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onUpdateLayout({ allowQuestionSplit: true })}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition ${
+                    layoutConfig.allowQuestionSplit !== false
+                      ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                      : 'bg-white border-slate-200 text-slate-600'
+                  }`}
+                >
+                  অটো-ফ্লো (ডিফল্ট)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdateLayout({ allowQuestionSplit: false })}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition ${
+                    layoutConfig.allowQuestionSplit === false
+                      ? 'bg-amber-50 border-amber-500 text-amber-900'
+                      : 'bg-white border-slate-200 text-slate-600'
+                  }`}
+                >
+                  প্রশ্ন একসাথে রাখুন
+                </button>
               </div>
             </div>
 

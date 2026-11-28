@@ -51,17 +51,30 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
     headerConfig.subjectCode === '২০৪' ||
     layoutConfig.numberingFormat === 'ar';
 
+  const isChemistrySubject = Boolean(
+    headerConfig.subject?.includes('রসায়ন') ||
+      headerConfig.subject?.includes('রসায়ন') ||
+      headerConfig.subject?.toLowerCase().includes('chemistry')
+  );
+
   const isEnglishSubject =
     !isArabicSubject &&
+    !isChemistrySubject &&
     Boolean(
       headerConfig.subject?.toLowerCase().includes('english') ||
         headerConfig.subject?.includes('ইংরেজি') ||
         headerConfig.subjectCode === '107' ||
+        headerConfig.subjectCode === '108' ||
         headerConfig.subjectCode === '137' ||
+        headerConfig.subjectCode === '138' ||
         headerConfig.subjectCode === '236' ||
+        headerConfig.subjectCode === '239' ||
         headerConfig.subjectCode === '১০৭' ||
+        headerConfig.subjectCode === '১০৮' ||
         headerConfig.subjectCode === '১৩৭' ||
+        headerConfig.subjectCode === '১৩৮' ||
         headerConfig.subjectCode === '২৩৬' ||
+        headerConfig.subjectCode === '২৩৯' ||
         layoutConfig.numberingFormat === 'en'
     );
 
@@ -245,7 +258,7 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
           </span>
 
           {headerConfig.subjectCode && (
-            <span className="text-slate-600 font-mono text-xs">
+            <span className={`text-slate-700 font-semibold text-[0.92em] ${isEnglishSubject ? 'font-serif' : 'font-bn'}`}>
               ({isEnglishSubject ? 'Subject Code:' : 'বিষয় কোড:'} {headerConfig.subjectCode})
             </span>
           )}
@@ -327,7 +340,7 @@ export const EditableHeader: React.FC<EditableHeaderProps> = ({
             contentEditable
             suppressContentEditableWarning
             onBlur={(e) => handleBlur('totalMarks', e)}
-            className="font-mono font-bold outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded px-1 transition-colors cursor-text"
+            className={`${isEnglishSubject ? 'font-serif' : 'font-bn'} font-bold outline-none hover:bg-amber-50/70 focus:bg-amber-100/50 rounded px-1 transition-colors cursor-text`}
             title="ক্লিক করে পূর্ণমান পরিবর্তন করুন"
           >
             {totalMarksDisplay}

@@ -451,28 +451,25 @@ export const HscAlimEnglish1stModal: React.FC<HscAlimEnglish1stModalProps> = ({
   const meta = SECTION_META[section];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full sm:max-w-4xl h-[100dvh] sm:h-auto sm:max-h-[92vh] flex flex-col overflow-hidden sm:border sm:border-slate-200">
         {/* Header */}
-        <div className="px-4 sm:px-6 py-3.5 bg-gradient-to-r from-indigo-900 to-blue-800 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <BookOpen className="w-5 h-5 text-indigo-200" />
-            <div>
-              <h2 className="text-sm sm:text-base font-extrabold leading-tight">{meta.title}</h2>
-              <p className="text-[11px] text-indigo-100">{meta.sub}</p>
-            </div>
+        <div className="px-3 py-2 sm:px-5 sm:py-3 bg-indigo-900 text-white flex items-center justify-between shrink-0">
+          <div className="min-w-0">
+            <h2 className="text-sm sm:text-base font-bold leading-tight truncate">{meta.title}</h2>
+            <p className="text-[10px] sm:text-[11px] text-indigo-100 truncate">{meta.sub}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white/15 transition"
+            className="p-1.5 rounded-lg hover:bg-white/15 transition shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto p-2.5 sm:p-5 space-y-2.5 sm:space-y-4">
           {section === 'q1_passage_ab' && (
             <>
               <label className="flex items-center gap-2 text-xs font-bold text-slate-700">

@@ -39,6 +39,16 @@ import {
   toEnglishGradeLabel,
 } from './english1st/english1stDefaults';
 import {
+  isHscAlimEnglish2nd,
+  isSscDakhilEnglish2nd,
+} from './english2nd/english2ndDefaults';
+import {
+  StandardPaperMode,
+  getStandardInstructionsByMode,
+  getStandardSubjectConfig,
+} from './standardCqMcq/standardCqMcqConfig';
+import { toBengaliNumber } from './bangla1st/bangla1stDefaults';
+import {
   GraduationCap,
   BookOpen,
   Building,
@@ -132,7 +142,13 @@ export const MADRASAH_SUBJECTS = [
     name: 'ইংরেজি ১ম পত্র',
     shortName: 'ইংরেজি ১ম পত্র',
     code: '১৩৭',
-    desc: 'English for Today',
+    desc: 'English for Today (Reading & Writing)',
+  },
+  {
+    name: 'ইংরেজি ২য় পত্র',
+    shortName: 'ইংরেজি ২য় পত্র',
+    code: '১৩৮',
+    desc: 'Grammar (60) & Writing/Composition (40)',
   },
   {
     name: 'আকাইদ ও ফিকহ',
@@ -168,7 +184,25 @@ export const MADRASAH_SUBJECTS = [
     name: 'ইসলামের ইতিহাস',
     shortName: 'ইসলামের ইতিহাস',
     code: '১০৯',
-    desc: 'খিলাফত ও ইসলামের ইতিহাস',
+    desc: 'দাখিল ও আলিম: সৃজনশীল ৭০ + MCQ ৩০',
+  },
+  {
+    name: 'গণিত',
+    shortName: 'গণিত',
+    code: '১০৯',
+    desc: 'ক–ঘ বিভাগ সৃজনশীল ৭০ + MCQ ৩০',
+  },
+  {
+    name: 'পদার্থবিজ্ঞান',
+    shortName: 'পদার্থবিজ্ঞান',
+    code: '১৩৬',
+    desc: 'CQ ৪০ + সংক্ষিপ্ত ১০ + MCQ ২৫ (ব্যব. ২৫)',
+  },
+  {
+    name: 'রসায়ন',
+    shortName: 'রসায়ন',
+    code: '১৩৭',
+    desc: 'CQ ৪০ + সংক্ষিপ্ত ১০ + MCQ ২৫ (ব্যব. ২৫)',
   },
   {
     name: 'বালাঘাত ও মানতিক',
@@ -196,6 +230,12 @@ export const SCHOOL_SUBJECTS = [
     shortName: 'ইংরেজি ১ম পত্র',
     code: '১০৭',
     desc: 'English for Today (NCTB)',
+  },
+  {
+    name: 'ইংরেজি ২য় পত্র',
+    shortName: 'ইংরেজি ২য় পত্র',
+    code: '১০৮',
+    desc: 'Grammar (60) & Writing/Composition (40)',
   },
   {
     name: 'গণিত',
@@ -392,6 +432,27 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
       setExamTitle('অর্ধ-বার্ষিক / প্রাক-নির্বাচনি পরীক্ষা - ২০২৬');
       if (grade.includes('العاشر')) setGrade('দাখিল ১০ম শ্রেণি (দাখিল পরীক্ষা)');
       else if (grade.includes('التاسع')) setGrade('দাখিল ৯ম শ্রেণি');
+    } else if (isHscAlimEnglish2nd(subjName, code, grade)) {
+      const isAlim = isAlimGrade(grade);
+      setInstitutionName(
+        isAlim ? 'Darunnajat Siddikia Kamil Madrasah' : 'Noakhali Government College'
+      );
+      setExamTitle(isAlim ? 'ALIM EXAMINATION - 2026' : 'HSC EXAMINATION - 2026');
+      setSubject('ENGLISH SECOND PAPER');
+      setSubjectCode(isAlim ? '239' : '108');
+      setGrade(toEnglishGradeLabel(grade, stream));
+      setTimeAllowed('3 hours');
+      setTotalMarks(100);
+    } else if (isSscDakhilEnglish2nd(subjName, code, grade)) {
+      setInstitutionName(
+        stream === 'ALIA' ? 'Darunnajat Siddikia Kamil Madrasah' : 'Noakhali Zilla School'
+      );
+      setExamTitle('Annual / Pre-Test Examination - 2026');
+      setSubject('ENGLISH SECOND PAPER');
+      setSubjectCode(stream === 'ALIA' ? '138' : '108');
+      setGrade(toEnglishGradeLabel(grade, stream));
+      setTimeAllowed('3 hours');
+      setTotalMarks(100);
     } else if (isHscAlimEnglish1st(subjName, code, grade)) {
       const isAlim = isAlimGrade(grade);
       setInstitutionName(
@@ -454,6 +515,28 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
       } else {
         setGrade('الصف الأول من العالم');
       }
+    } else if (getStandardSubjectConfig(subjName, code, grade)) {
+      const stdCfg = getStandardSubjectConfig(subjName, code, grade)!;
+      const stdMode: StandardPaperMode =
+        banglaPaperMode === 'MCQ_ONLY_30'
+          ? 'MCQ_ONLY'
+          : banglaPaperMode === 'CQ_ONLY_70'
+          ? 'CQ_ONLY'
+          : 'COMBINED';
+      const meta = getStandardInstructionsByMode(stdCfg, stdMode);
+      setTimeAllowed(meta.timeAllowed);
+      setTotalMarks(meta.totalMarks);
+      if (stream === 'ALIA' && !/[\u0980-\u09FF]/.test(institutionName)) {
+        setInstitutionName('দারুন্নাজাত সিদ্দিকিয়া কামিল মাদ্রাসা');
+        setExamTitle('অর্ধ-বার্ষিক / প্রাক-নির্বাচনি পরীক্ষা - ২০২৬');
+      } else if (stream === 'GENERAL' && !/[\u0980-\u09FF]/.test(institutionName)) {
+        setInstitutionName('নোয়াখালী জিলা স্কুল');
+        setExamTitle('বার্ষিক / নির্বাচনি পরীক্ষা - ২০২৬');
+      }
+      if (grade.includes('العاشر')) setGrade('দাখিল ১০ম শ্রেণি (দাখিল পরীক্ষা)');
+      else if (grade.includes('التاسع')) setGrade('দাখিল ৯ম শ্রেণি');
+      else if (grade.includes('الثاني')) setGrade('আলিম ২য় বর্ষ (আলিম পরীক্ষা)');
+      else if (grade.includes('الأول')) setGrade('আলিম ১ম বর্ষ');
     } else {
       if (stream === 'ALIA' && !/[\u0980-\u09FF]/.test(institutionName)) {
         setInstitutionName('দারুন্নাজাত সিদ্দিকিয়া কামিল মাদ্রাসা');
@@ -465,6 +548,15 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
 
   const handleBanglaModeSelect = (mode: BanglaPaperMode) => {
     setBanglaPaperMode(mode);
+    const stdCfg = getStandardSubjectConfig(subject, subjectCode, grade);
+    if (stdCfg) {
+      const stdMode: StandardPaperMode =
+        mode === 'MCQ_ONLY_30' ? 'MCQ_ONLY' : mode === 'CQ_ONLY_70' ? 'CQ_ONLY' : 'COMBINED';
+      const meta = getStandardInstructionsByMode(stdCfg, stdMode);
+      setTimeAllowed(meta.timeAllowed);
+      setTotalMarks(meta.totalMarks);
+      return;
+    }
     const isB2 = isBangla2ndPaper(subject, subjectCode);
     const isAq = isDakhilAqaidFiqh(subject, subjectCode);
     const isDq = isDakhilQuranTajweed(subject, subjectCode, grade);
@@ -492,7 +584,8 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
       isDakhilAqaidFiqh(subject, subjectCode) ||
       isDakhilQuranTajweed(subject, subjectCode, grade) ||
       isDakhilJuniorQuran(subject, subjectCode, grade) ||
-      isDakhilHadith(subject, subjectCode, grade);
+      isDakhilHadith(subject, subjectCode, grade) ||
+      Boolean(getStandardSubjectConfig(subject, subjectCode, grade));
     const isAr2nd =
       subject.includes('আরবি ২য়') ||
       subject.includes('قواعد') ||
@@ -921,6 +1014,74 @@ export const SetupWizardModal: React.FC<SetupWizardModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Standard CQ + SQ + MCQ Subjects Paper Mode Configuration */}
+              {(() => {
+                const stdCfg = getStandardSubjectConfig(subject, subjectCode, grade);
+                if (!stdCfg) return null;
+                return (
+                  <div className="bg-emerald-50/70 border border-emerald-200 p-3 rounded-2xl space-y-2.5">
+                    <div className="text-[11px] font-extrabold text-emerald-950 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                      <span className="truncate">
+                        {stdCfg.label} পরীক্ষার ধরন (
+                        {stdCfg.hasShortQuestions
+                          ? `CQ ${toBengaliNumber(stdCfg.cqTotalMarks)} + সংক্ষিপ্ত ${toBengaliNumber(stdCfg.sqTotalMarks)} + MCQ ${toBengaliNumber(stdCfg.mcqCount)} = ${toBengaliNumber(stdCfg.combinedMarks)}`
+                          : `CQ ${toBengaliNumber(stdCfg.cqTotalMarks)} + MCQ ${toBengaliNumber(stdCfg.mcqCount)} = ১০০`}
+                        ):
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        {
+                          id: 'COMBINED_100' as BanglaPaperMode,
+                          title: `একত্রে ${toBengaliNumber(stdCfg.combinedMarks)}`,
+                          sub: stdCfg.hasShortQuestions
+                            ? `CQ ${toBengaliNumber(stdCfg.cqTotalMarks)} + SQ ${toBengaliNumber(stdCfg.sqTotalMarks)} + MCQ ${toBengaliNumber(stdCfg.mcqCount)}`
+                            : `CQ ${toBengaliNumber(stdCfg.cqTotalMarks)} + MCQ ${toBengaliNumber(stdCfg.mcqCount)}`,
+                        },
+                        {
+                          id: 'MCQ_ONLY_30' as BanglaPaperMode,
+                          title: `শুধু MCQ ${toBengaliNumber(stdCfg.mcqCount)}`,
+                          sub: `${toBengaliNumber(stdCfg.mcqCount)}টি প্রশ্ন · ${stdCfg.mcqTime}`,
+                        },
+                        {
+                          id: 'CQ_ONLY_70' as BanglaPaperMode,
+                          title: stdCfg.hasShortQuestions
+                            ? `লিখিত ${toBengaliNumber(stdCfg.cqTotalMarks + stdCfg.sqTotalMarks)}`
+                            : `শুধু CQ ${toBengaliNumber(stdCfg.cqTotalMarks)}`,
+                          sub: stdCfg.hasShortQuestions
+                            ? `CQ ${toBengaliNumber(stdCfg.cqTotalMarks)} + SQ ${toBengaliNumber(stdCfg.sqTotalMarks)} · ${stdCfg.writtenTime}`
+                            : `${toBengaliNumber(stdCfg.cqAnswerCount)}টি সৃজনশীল · ${stdCfg.writtenTime}`,
+                        },
+                      ].map((m) => {
+                        const active = banglaPaperMode === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => handleBanglaModeSelect(m.id)}
+                            className={`p-2 rounded-xl border text-center transition ${
+                              active
+                                ? 'bg-emerald-700 border-emerald-800 text-white shadow-2xs'
+                                : 'bg-white border-emerald-200 text-slate-700 hover:bg-emerald-100/50'
+                            }`}
+                          >
+                            <div className="text-[11px] sm:text-xs font-extrabold">{m.title}</div>
+                            <div
+                              className={`text-[9px] sm:text-[10px] mt-0.5 truncate ${
+                                active ? 'text-emerald-100' : 'text-slate-500'
+                              }`}
+                            >
+                              {m.sub}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {isAlimFiqhPaper(subject, subjectCode) && (
                 <div className="bg-emerald-50/80 border border-emerald-200 p-3 rounded-2xl text-xs text-emerald-950 space-y-1">

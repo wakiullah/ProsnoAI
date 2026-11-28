@@ -122,6 +122,35 @@ import {
 } from '../../components/create/english1st/english1stDefaults';
 import { English1stSectionModal } from '../../components/create/english1st/English1stSectionModal';
 import { HscAlimEnglish1stModal } from '../../components/create/english1st/HscAlimEnglish1stModal';
+import {
+  HSC_ENG2_GROUP_IDS,
+  HscEng2Section,
+  SSC_ENG2_GROUP_IDS,
+  SscEng2Section,
+  getEnglish2ndInstructions,
+  isHscAlimEnglish2nd,
+  isSscDakhilEnglish2nd,
+} from '../../components/create/english2nd/english2ndDefaults';
+import { English2ndSectionModal } from '../../components/create/english2nd/English2ndSectionModal';
+import { HscAlimEnglish2ndModal } from '../../components/create/english2nd/HscAlimEnglish2ndModal';
+import {
+  STD_GROUP_PREFIX,
+  StandardPaperMode,
+  getStandardInstructionsByMode,
+  getStandardSubjectConfig,
+} from '../../components/create/standardCqMcq/standardCqMcqConfig';
+import {
+  StandardCqBuilderModal,
+  extractStandardCqGroups,
+} from '../../components/create/standardCqMcq/StandardCqBuilderModal';
+import {
+  StandardSqBuilderModal,
+  extractStandardSqGroups,
+} from '../../components/create/standardCqMcq/StandardSqBuilderModal';
+import {
+  StandardMcqBuilderModal,
+  extractStandardMcqGroups,
+} from '../../components/create/standardCqMcq/StandardMcqBuilderModal';
 import { PdfExportChoiceModal } from '../../components/create/PdfExportChoiceModal';
 import {
   BanglaMcqBuilderModal,
@@ -316,6 +345,16 @@ export default function CreateQuestionPage() {
   const [sscEng1Section, setSscEng1Section] = useState<SscEng1Section>('seen_1_3');
   const [isHscEng1ModalOpen, setIsHscEng1ModalOpen] = useState(false);
   const [hscEng1Section, setHscEng1Section] = useState<HscEng1Section>('q1_passage_ab');
+  const [isSscEng2ModalOpen, setIsSscEng2ModalOpen] = useState(false);
+  const [sscEng2Section, setSscEng2Section] = useState<SscEng2Section>('q1_3_grammar');
+  const [isHscEng2ModalOpen, setIsHscEng2ModalOpen] = useState(false);
+  const [hscEng2Section, setHscEng2Section] = useState<HscEng2Section>('q1_4_grammar');
+  const [isStandardCqModalOpen, setIsStandardCqModalOpen] = useState(false);
+  const [activeStandardCqGroupId, setActiveStandardCqGroupId] = useState<string | null>(null);
+  const [isStandardSqModalOpen, setIsStandardSqModalOpen] = useState(false);
+  const [activeStandardSqGroupId, setActiveStandardSqGroupId] = useState<string | null>(null);
+  const [isStandardMcqModalOpen, setIsStandardMcqModalOpen] = useState(false);
+  const [activeStandardMcqGroupId, setActiveStandardMcqGroupId] = useState<string | null>(null);
   const [isPdfChoiceModalOpen, setIsPdfChoiceModalOpen] = useState(false);
   const [isDownloadingDirectPdf, setIsDownloadingDirectPdf] = useState(false);
   const [isPaperSettingsModalOpen, setIsPaperSettingsModalOpen] = useState(false);
@@ -332,6 +371,18 @@ export default function CreateQuestionPage() {
   const tarjamaInshaGroups = useMemo(() => extractTarjamaInshaGroups(questions), [questions]);
   const banglaMcqGroups = useMemo(() => extractBanglaMcqGroups(questions), [questions]);
   const banglaCqGroups = useMemo(() => extractBanglaCqGroups(questions), [questions]);
+  const standardCqGroups = useMemo(() => extractStandardCqGroups(questions), [questions]);
+  const standardSqGroups = useMemo(() => extractStandardSqGroups(questions), [questions]);
+  const standardMcqGroups = useMemo(() => extractStandardMcqGroups(questions), [questions]);
+  const activeStandardConfig = useMemo(
+    () =>
+      getStandardSubjectConfig(
+        headerConfig.subject,
+        headerConfig.subjectCode,
+        headerConfig.grade
+      ),
+    [headerConfig.subject, headerConfig.subjectCode, headerConfig.grade]
+  );
   const bangla2ndSscWrittenGroups = useMemo(() => extractBangla2ndSscWrittenGroups(questions), [questions]);
   const bangla2ndHscGrammarGroups = useMemo(() => extractBangla2ndHscGrammarGroups(questions), [questions]);
   const bangla2ndHscNirmitiGroups = useMemo(() => extractBangla2ndHscNirmitiGroups(questions), [questions]);
@@ -927,6 +978,46 @@ export default function CreateQuestionPage() {
     const isDakhilQuran = isDakhilQuranTajweed(config.subject, config.subjectCode, config.grade);
     const isAlimHadith = isAlimHadithPaper(config.subject, config.subjectCode, config.grade);
     const isDakhilHadithSubj = isDakhilHadith(config.subject, config.subjectCode, config.grade);
+    const isHscEng2 = isHscAlimEnglish2nd(config.subject, config.subjectCode, config.grade);
+    const isSscEng2 = isSscDakhilEnglish2nd(config.subject, config.subjectCode, config.grade);
+    if (isHscEng2 || isSscEng2) {
+      const eng2Meta = getEnglish2ndInstructions();
+      loadFullPaper({
+        headerConfig: {
+          institutionName: config.institutionName || 'Noakhali Zilla School',
+          examTitle:
+            config.examTitle ||
+            (isHscEng2 ? 'HSC / ALIM EXAMINATION - 2026' : 'Annual / Pre-Test Examination - 2026'),
+          grade: toEnglishGradeLabel(config.grade, config.stream),
+          subject: 'ENGLISH SECOND PAPER',
+          subjectCode:
+            config.subjectCode || (config.stream === 'ALIA' ? (isHscEng2 ? '239' : '138') : '108'),
+          timeAllowed: config.timeAllowed || eng2Meta.timeAllowed,
+          totalMarks: config.totalMarks || eng2Meta.totalMarks,
+          headerSize: 'standard',
+          bismillahText: undefined,
+          educationStream: config.stream,
+          headerPreset: config.stream === 'ALIA' ? 'ALIA' : 'NCTB',
+          generalInstructions: eng2Meta.generalInstructions,
+        },
+        layoutConfig: {
+          columns: 1,
+          numberingFormat: 'en',
+          fontSize: 'standard',
+          paperSize: 'A4',
+        },
+        sections: [],
+        questions: [],
+      });
+      setActiveTab('insert');
+      showToast(
+        isHscEng2
+          ? 'HSC / Alim English Second Paper ready! Insert questions from the Insert menu.'
+          : 'English Second Paper (Class 6–10) ready! Insert questions from the Insert menu.'
+      );
+      return;
+    }
+
     const isHscEng1 = isHscAlimEnglish1st(config.subject, config.subjectCode, config.grade);
     const isSscEng1 = isSscDakhilEnglish1st(config.subject, config.subjectCode, config.grade);
     if (isHscEng1 || isSscEng1) {
@@ -961,6 +1052,48 @@ export default function CreateQuestionPage() {
           ? 'HSC / Alim English 1st Paper ready! Insert questions from the Insert menu.'
           : 'English First Paper (Class 6–10) ready! Insert questions from the Insert menu.'
       );
+      return;
+    }
+
+    const stdCfg = getStandardSubjectConfig(config.subject, config.subjectCode, config.grade);
+    if (stdCfg) {
+      const stdMode: StandardPaperMode =
+        config.banglaPaperMode === 'MCQ_ONLY_30'
+          ? 'MCQ_ONLY'
+          : config.banglaPaperMode === 'CQ_ONLY_70'
+          ? 'CQ_ONLY'
+          : 'COMBINED';
+      const stdMeta = getStandardInstructionsByMode(stdCfg, stdMode);
+      loadFullPaper({
+        headerConfig: {
+          institutionName:
+            config.institutionName ||
+            (config.stream === 'ALIA'
+              ? 'দারুন্নাজাত সিদ্দিকিয়া কামিল মাদ্রাসা'
+              : 'নোয়াখালী জিলা স্কুল'),
+          examTitle: config.examTitle || 'বার্ষিক / নির্বাচনি পরীক্ষা - ২০২৬',
+          grade: config.grade,
+          subject: config.subject,
+          subjectCode: config.subjectCode,
+          timeAllowed: config.timeAllowed || stdMeta.timeAllowed,
+          totalMarks: config.totalMarks || stdMeta.totalMarks,
+          headerSize: 'standard',
+          bismillahText: undefined,
+          educationStream: config.stream,
+          headerPreset: config.stream === 'ALIA' ? 'ALIA' : 'NCTB',
+          generalInstructions: stdMeta.generalInstructions,
+        },
+        layoutConfig: {
+          columns: stdMode === 'MCQ_ONLY' ? 2 : 1,
+          numberingFormat: 'bn',
+          fontSize: 'standard',
+          paperSize: 'A4',
+        },
+        sections: [],
+        questions: [],
+      });
+      setActiveTab('insert');
+      showToast(`${stdCfg.label} প্রশ্নপত্র প্রস্তুত! Insert মেনু থেকে প্রশ্ন যুক্ত করুন।`);
       return;
     }
     const isBangla1st =
@@ -2261,6 +2394,26 @@ export default function CreateQuestionPage() {
           setHscEng1Section(sec);
           setIsHscEng1ModalOpen(true);
         }}
+        onOpenSscEng2Modal={(sec) => {
+          setSscEng2Section(sec);
+          setIsSscEng2ModalOpen(true);
+        }}
+        onOpenHscEng2Modal={(sec) => {
+          setHscEng2Section(sec);
+          setIsHscEng2ModalOpen(true);
+        }}
+        onOpenStandardCqModal={() => {
+          setActiveStandardCqGroupId(standardCqGroups[0]?.groupId ?? null);
+          setIsStandardCqModalOpen(true);
+        }}
+        onOpenStandardSqModal={() => {
+          setActiveStandardSqGroupId(standardSqGroups[0]?.groupId ?? null);
+          setIsStandardSqModalOpen(true);
+        }}
+        onOpenStandardMcqModal={() => {
+          setActiveStandardMcqGroupId(standardMcqGroups[0]?.groupId ?? null);
+          setIsStandardMcqModalOpen(true);
+        }}
         onOpenSettingsModal={() => setIsPaperSettingsModalOpen(true)}
         onAutoRenumber={handleAutoRenumber}
         onStripAllHarakat={handleStripAllHarakat}
@@ -2308,6 +2461,15 @@ export default function CreateQuestionPage() {
               handleOpenIkhtibarModal(q);
             } else if (q.groupId && q.groupId.startsWith('tarjama-insha-section')) {
               handleOpenTarjamaInshaModal(q);
+            } else if (q.groupId && q.groupId.startsWith(STD_GROUP_PREFIX.CQ)) {
+              setActiveStandardCqGroupId(q.groupId);
+              setIsStandardCqModalOpen(true);
+            } else if (q.groupId && q.groupId.startsWith(STD_GROUP_PREFIX.SQ)) {
+              setActiveStandardSqGroupId(q.groupId);
+              setIsStandardSqModalOpen(true);
+            } else if (q.groupId && q.groupId.startsWith(STD_GROUP_PREFIX.MCQ)) {
+              setActiveStandardMcqGroupId(q.groupId);
+              setIsStandardMcqModalOpen(true);
             } else if (q.groupId && q.groupId.startsWith('bangla-mcq-section')) {
               handleOpenBanglaMcqModal(q);
             } else if (q.groupId && q.groupId.startsWith('bangla-cq-section')) {
@@ -2403,6 +2565,22 @@ export default function CreateQuestionPage() {
               if (found) {
                 setHscEng1Section(found);
                 setIsHscEng1ModalOpen(true);
+              }
+            } else if (q.groupId && Object.values(SSC_ENG2_GROUP_IDS).includes(q.groupId)) {
+              const found = (Object.keys(SSC_ENG2_GROUP_IDS) as SscEng2Section[]).find(
+                (k) => SSC_ENG2_GROUP_IDS[k] === q.groupId
+              );
+              if (found) {
+                setSscEng2Section(found);
+                setIsSscEng2ModalOpen(true);
+              }
+            } else if (q.groupId && Object.values(HSC_ENG2_GROUP_IDS).includes(q.groupId)) {
+              const found = (Object.keys(HSC_ENG2_GROUP_IDS) as HscEng2Section[]).find(
+                (k) => HSC_ENG2_GROUP_IDS[k] === q.groupId
+              );
+              if (found) {
+                setHscEng2Section(found);
+                setIsHscEng2ModalOpen(true);
               }
             } else {
               handleOpenNasrulModal(q);
@@ -2531,6 +2709,22 @@ export default function CreateQuestionPage() {
                       setHscEng1Section(found);
                       setIsHscEng1ModalOpen(true);
                     }
+                  } else if (q.groupId && Object.values(SSC_ENG2_GROUP_IDS).includes(q.groupId)) {
+                    const found = (Object.keys(SSC_ENG2_GROUP_IDS) as SscEng2Section[]).find(
+                      (k) => SSC_ENG2_GROUP_IDS[k] === q.groupId
+                    );
+                    if (found) {
+                      setSscEng2Section(found);
+                      setIsSscEng2ModalOpen(true);
+                    }
+                  } else if (q.groupId && Object.values(HSC_ENG2_GROUP_IDS).includes(q.groupId)) {
+                    const found = (Object.keys(HSC_ENG2_GROUP_IDS) as HscEng2Section[]).find(
+                      (k) => HSC_ENG2_GROUP_IDS[k] === q.groupId
+                    );
+                    if (found) {
+                      setHscEng2Section(found);
+                      setIsHscEng2ModalOpen(true);
+                    }
                   } else handleOpenNasrulModal(q);
                 }
               : undefined
@@ -2623,6 +2817,26 @@ export default function CreateQuestionPage() {
           onOpenHscEng1Modal={(sec) => {
             setHscEng1Section(sec);
             setIsHscEng1ModalOpen(true);
+          }}
+          onOpenSscEng2Modal={(sec) => {
+            setSscEng2Section(sec);
+            setIsSscEng2ModalOpen(true);
+          }}
+          onOpenHscEng2Modal={(sec) => {
+            setHscEng2Section(sec);
+            setIsHscEng2ModalOpen(true);
+          }}
+          onOpenStandardCqModal={() => {
+            setActiveStandardCqGroupId(standardCqGroups[0]?.groupId ?? null);
+            setIsStandardCqModalOpen(true);
+          }}
+          onOpenStandardSqModal={() => {
+            setActiveStandardSqGroupId(standardSqGroups[0]?.groupId ?? null);
+            setIsStandardSqModalOpen(true);
+          }}
+          onOpenStandardMcqModal={() => {
+            setActiveStandardMcqGroupId(standardMcqGroups[0]?.groupId ?? null);
+            setIsStandardMcqModalOpen(true);
           }}
           openInsertTrigger={mobileInsertTrigger}
         />
@@ -3281,6 +3495,131 @@ export default function CreateQuestionPage() {
           }
         }}
       />
+
+      {/* ───────────────── SSC / DAKHIL ENGLISH SECOND PAPER (CLASS 6–10) MODAL ───────────────── */}
+      <English2ndSectionModal
+        isOpen={isSscEng2ModalOpen}
+        onClose={() => setIsSscEng2ModalOpen(false)}
+        section={sscEng2Section}
+        grade={headerConfig.grade || 'Class 10'}
+        existingQuestions={questions}
+        onSave={(newQs, targetGroupId) => {
+          const hasExisting = questions.some((q) => q.groupId === targetGroupId);
+          if (hasExisting) {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('English Second Paper section updated!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('English Second Paper section added!');
+          }
+        }}
+      />
+
+      {/* ───────────────── HSC / ALIM ENGLISH SECOND PAPER MODAL ───────────────── */}
+      <HscAlimEnglish2ndModal
+        isOpen={isHscEng2ModalOpen}
+        onClose={() => setIsHscEng2ModalOpen(false)}
+        section={hscEng2Section}
+        grade={headerConfig.grade || 'Alim 2nd Year'}
+        existingQuestions={questions}
+        onSave={(newQs, targetGroupId) => {
+          const hasExisting = questions.some((q) => q.groupId === targetGroupId);
+          if (hasExisting) {
+            replaceQuestionGroup(targetGroupId, newQs);
+            showToast('HSC / Alim English Second Paper section updated!');
+          } else {
+            if (sections.length > 0) {
+              newQs.forEach((q) => {
+                q.sectionId = sections[0].id;
+              });
+            }
+            addQuestions(newQs);
+            showToast('HSC / Alim English Second Paper section added!');
+          }
+        }}
+      />
+
+      {/* ───────────────── REUSABLE STANDARD CQ / SQ / MCQ MODALS ───────────────── */}
+      {activeStandardConfig && (
+        <>
+          <StandardCqBuilderModal
+            isOpen={isStandardCqModalOpen}
+            onClose={() => setIsStandardCqModalOpen(false)}
+            config={activeStandardConfig}
+            grade={headerConfig.grade}
+            subject={headerConfig.subject}
+            allGroups={standardCqGroups}
+            activeGroupId={activeStandardCqGroupId}
+            onSave={(newQs, mode, targetGroupId) => {
+              if (mode === 'update') {
+                replaceQuestionGroup(targetGroupId, newQs);
+                showToast(`${activeStandardConfig.label} সৃজনশীল অংশ আপডেট হয়েছে!`);
+              } else {
+                if (sections.length > 0) {
+                  newQs.forEach((q) => {
+                    q.sectionId = sections[0].id;
+                  });
+                }
+                addQuestions(newQs);
+                showToast(`${activeStandardConfig.label} সৃজনশীল অংশ যুক্ত হয়েছে!`);
+              }
+            }}
+          />
+
+          <StandardSqBuilderModal
+            isOpen={isStandardSqModalOpen}
+            onClose={() => setIsStandardSqModalOpen(false)}
+            config={activeStandardConfig}
+            grade={headerConfig.grade}
+            subject={headerConfig.subject}
+            allGroups={standardSqGroups}
+            activeGroupId={activeStandardSqGroupId}
+            onSave={(newQs, mode, targetGroupId) => {
+              if (mode === 'update') {
+                replaceQuestionGroup(targetGroupId, newQs);
+                showToast(`${activeStandardConfig.label} সংক্ষিপ্ত প্রশ্ন আপডেট হয়েছে!`);
+              } else {
+                if (sections.length > 0) {
+                  newQs.forEach((q) => {
+                    q.sectionId = sections[0].id;
+                  });
+                }
+                addQuestions(newQs);
+                showToast(`${activeStandardConfig.label} সংক্ষিপ্ত প্রশ্ন যুক্ত হয়েছে!`);
+              }
+            }}
+          />
+
+          <StandardMcqBuilderModal
+            isOpen={isStandardMcqModalOpen}
+            onClose={() => setIsStandardMcqModalOpen(false)}
+            config={activeStandardConfig}
+            grade={headerConfig.grade}
+            subject={headerConfig.subject}
+            allGroups={standardMcqGroups}
+            activeGroupId={activeStandardMcqGroupId}
+            onSave={(newQs, mode, targetGroupId) => {
+              if (mode === 'update') {
+                replaceQuestionGroup(targetGroupId, newQs);
+                showToast(`${activeStandardConfig.label} বহুনির্বাচনি অংশ আপডেট হয়েছে!`);
+              } else {
+                if (sections.length > 0) {
+                  newQs.forEach((q) => {
+                    q.sectionId = sections[0].id;
+                  });
+                }
+                addQuestions(newQs);
+                showToast(`${activeStandardConfig.label} বহুনির্বাচনি অংশ যুক্ত হয়েছে!`);
+              }
+            }}
+          />
+        </>
+      )}
 
       {/* ───────────────── QUICK AI SIDE DRAWER ───────────────── */}
       <QuickAiDrawer

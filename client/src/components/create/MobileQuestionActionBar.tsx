@@ -120,6 +120,18 @@ export const MobileQuestionActionBar: React.FC<MobileQuestionActionBarProps> = (
               <span className="text-[10px] font-bold mt-0.5">এডিট</span>
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => onUpdate({ ...question, keepTogether: !question.keepTogether })}
+            className={`flex flex-col items-center justify-center px-2.5 py-1 rounded-xl shrink-0 active:scale-95 transition ${
+              question.keepTogether ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-200'
+            }`}
+          >
+            <span className="text-[11px] font-extrabold">{question.keepTogether ? '🔒' : '↔'}</span>
+            <span className="text-[10px] font-bold mt-0.5">
+              {question.keepTogether ? 'একসাথে' : 'অটো-ফ্লো'}
+            </span>
+          </button>
 
           <button
             type="button"

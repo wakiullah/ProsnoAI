@@ -89,6 +89,9 @@ export const PaperSettingsModal: React.FC<PaperSettingsModalProps> = ({
   );
   const [watermark, setWatermark] = useState(layoutConfig.watermarkText || '');
   const [showMarks, setShowMarks] = useState(layoutConfig.showMarks ?? true);
+  const [allowQuestionSplit, setAllowQuestionSplit] = useState(
+    layoutConfig.allowQuestionSplit !== false
+  );
   const [margins, setMargins] = useState(
     layoutConfig.margins || { topMm: 14, bottomMm: 14, leftMm: 18, rightMm: 18 }
   );
@@ -176,6 +179,7 @@ export const PaperSettingsModal: React.FC<PaperSettingsModalProps> = ({
       arabicFont,
       watermarkText: watermark.trim(),
       showMarks,
+      allowQuestionSplit,
       margins,
     });
 
@@ -502,6 +506,43 @@ export const PaperSettingsModal: React.FC<PaperSettingsModalProps> = ({
                     <div className="font-bold text-xs">২-কলাম লেআউট (Standard Board Layout)</div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
                       NCTB বোর্ড ও স্কুল পরীক্ষার স্ট্যান্ডার্ড দুই কলাম ফরম্যাট
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Smart Question Flow / Keep Together */}
+              <div className="pt-2 border-t border-slate-100">
+                <label className="font-semibold text-slate-700 block mb-1.5">
+                  কলাম / পেজ বিভাজন (Smart Flow):
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setAllowQuestionSplit(true)}
+                    className={`p-3 rounded-xl border text-left transition ${
+                      allowQuestionSplit
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-1 ring-emerald-500 font-bold'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="font-bold text-xs">স্বয়ংক্রিয় ফ্লো (ডিফল্ট)</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">
+                      কলামে যতটুকু সাব-প্রশ্ন ধরবে ততটুকু বসিয়ে বাকিগুলো পরের কলাম/পেজে যাবে
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllowQuestionSplit(false)}
+                    className={`p-3 rounded-xl border text-left transition ${
+                      !allowQuestionSplit
+                        ? 'bg-amber-50 border-amber-500 text-amber-900 ring-1 ring-amber-500 font-bold'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="font-bold text-xs">সম্পূর্ণ প্রশ্ন একসাথে রাখুন</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">
+                      কোনো প্রশ্ন না ভেঙে পুরোটাই পরের কলাম বা পেজে স্থানান্তর করবে
                     </div>
                   </button>
                 </div>

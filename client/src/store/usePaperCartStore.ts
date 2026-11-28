@@ -147,6 +147,7 @@ const defaultLayoutConfig: LayoutConfig = {
   watermarkText: '',
   showMarks: true,
   showAnswers: false,
+  allowQuestionSplit: true,
 };
 
 export const usePaperCartStore = create<PaperCartState>()(
